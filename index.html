@@ -48,20 +48,11 @@
       </div>
 
       <div class="controls">
+        <!-- Campos ocultos para variáveis de ambiente -->
+        <input id="apiBase" type="hidden" value="__API_BASE_URL__" />
+        <input id="apiKey" type="hidden" value="__API_KEY__" />
+        
         <div class="row">
-          <div>
-            <label>API Base URL</label>
-            <input id="apiBase" style="width: 360px;"
-                   value="__API_BASE_URL__" />
-          </div>
-
-          <div>
-            <label>API Key</label>
-            <input id="apiKey" type="password" style="width: 280px;"
-                   value="__API_KEY__"
-                   placeholder="Digite a chave da API" />
-          </div>
-
           <div>
             <label>Atualização automática (modo minutos)</label>
             <select id="autoRefresh">
