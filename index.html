@@ -24,6 +24,10 @@
     canvas { width: 100%; height: 440px; }
     .status { margin-top: 8px; font-size: 12px; color: #666; }
     .badge { display:inline-block; padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; }
+    .reading-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
+    .reading-item:last-child { border-bottom: none; }
+    .reading-value { font-weight: 600; color: #333; }
+    .reading-time { color: #666; font-size: 11px; }
   </style>
 </head>
 <body>
@@ -33,13 +37,11 @@
       <div class="muted">Fonte: endpoint <span class="badge">/chart</span> (America/São_Paulo)</div>
 
       <div class="row" style="margin-top: 14px;">
-        <div class="kpi">
-          <div class="muted">Último PM2.5 (µg/m³)</div>
-          <div id="kpiPm25" style="font-size: 30px;">—</div>
-        </div>
-        <div class="kpi">
-          <div class="muted">Último horário (America/São_Paulo)</div>
-          <div id="kpiTime" style="font-size: 16px;">—</div>
+        <div class="kpi" style="min-width: 300px; flex: 1;">
+          <div class="muted">Últimas 5 leituras PM2.5 (µg/m³)</div>
+          <div id="kpiReadings" style="font-size: 14px; margin-top: 8px;">
+            <div style="text-align: center; color: #999;">—</div>
+          </div>
         </div>
         <div class="kpi">
           <div class="muted">Modo</div>
@@ -270,24 +272,35 @@
       chart.data.datasets = datasets;
       chart.update();
 
-      // KPI: último PM2.5
-      const pm25 = (series.pm25 || []).filter(v => v !== null && v !== undefined);
-      const lastIdx = (js.labels || []).length - 1;
-
-      if (pm25.length && lastIdx >= 0) {
-        const lastLabelIso = (js.labels || [])[lastIdx];
-        const lastPm25 = (series.pm25 || [])[lastIdx];
-
-        if (lastPm25 !== null && lastPm25 !== undefined) {
-          $("kpiPm25").textContent = Number(lastPm25).toFixed(1);
-        } else {
-          $("kpiPm25").textContent = "—";
+      // KPI: últimas 5 leituras de PM2.5
+      const readingsContainer = $("kpiReadings");
+      const pm25 = series.pm25 || [];
+      const labelsIso = js.labels || [];
+      
+      // Filtra leituras válidas com seus índices
+      const validReadings = [];
+      for (let i = labelsIso.length - 1; i >= 0; i--) {
+        if (pm25[i] !== null && pm25[i] !== undefined) {
+          validReadings.push({
+            value: pm25[i],
+            time: labelsIso[i],
+            index: i
+          });
+          if (validReadings.length >= 5) break;
         }
-
-        $("kpiTime").textContent = fmtTime(lastLabelIso);
+      }
+      
+      if (validReadings.length > 0) {
+        readingsContainer.innerHTML = validReadings.map(reading => {
+          return `
+            <div class="reading-item">
+              <span class="reading-value">${Number(reading.value).toFixed(1)} µg/m³</span>
+              <span class="reading-time">${fmtTime(reading.time)}</span>
+            </div>
+          `;
+        }).join("");
       } else {
-        $("kpiPm25").textContent = "—";
-        $("kpiTime").textContent = "—";
+        readingsContainer.innerHTML = '<div style="text-align: center; color: #999;">Nenhuma leitura disponível</div>';
       }
 
       setStatus(`OK • pontos: ${js.meta?.points ?? labels.length} • ${Date.now() - startMs} ms`);
