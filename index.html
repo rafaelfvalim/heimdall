@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Monitor PMS5003 (PM2.5)</title>
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    .wrap { max-width: 1100px; margin: 0 auto; }
+    .card { padding: 16px; border: 1px solid #ddd; border-radius: 12px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    .kpi { padding: 12px; border: 1px solid #eee; border-radius: 10px; min-width: 220px; }
+    .muted { color: #666; font-size: 12px; }
+    label { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
+    input, button, select {
+      padding: 10px; border: 1px solid #ccc; border-radius: 10px;
+      font-size: 14px; background: #fff;
+    }
+    button { cursor: pointer; }
+    button.primary { font-weight: 600; }
+    .controls { margin-top: 14px; }
+    .sep { height: 1px; background: #eee; margin: 16px 0; }
+    canvas { width: 100%; height: 440px; }
+    .status { margin-top: 8px; font-size: 12px; color: #666; }
+    .badge { display:inline-block; padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h2 style="margin:0 0 6px 0;">PMS5003 - Monitor de Partículas</h2>
+      <div class="muted">Fonte: endpoint <span class="badge">/chart</span> (UTC)</div>
+
+      <div class="row" style="margin-top: 14px;">
+        <div class="kpi">
+          <div class="muted">Último PM2.5 (µg/m³)</div>
+          <div id="kpiPm25" style="font-size: 30px;">—</div>
+        </div>
+        <div class="kpi">
+          <div class="muted">Último horário (UTC)</div>
+          <div id="kpiTime" style="font-size: 16px;">—</div>
+        </div>
+        <div class="kpi">
+          <div class="muted">Modo</div>
+          <div id="kpiMode" style="font-size: 16px;">—</div>
+        </div>
+      </div>
+
+      <div class="controls">
+        <div class="row">
+          <div>
+            <label>API Base URL</label>
+            <input id="apiBase" style="width: 360px;"
+                   value="https://sites-automator.aal5pu.easypanel.host" />
+          </div>
+
+          <div>
+            <label>Atualização automática (modo minutos)</label>
+            <select id="autoRefresh">
+              <option value="on" selected>Ligado (10s)</option>
+              <option value="off">Desligado</option>
+            </select>
+          </div>
+
+          <div>
+            <label>Séries</label>
+            <select id="seriesMode">
+              <option value="pm25" selected>PM2.5</option>
+              <option value="pm25_pm1">PM2.5 + PM1.0</option>
+              <option value="pm25_pm10">PM2.5 + PM10</option>
+              <option value="all">PM1.0 + PM2.5 + PM10</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="sep"></div>
+
+        <div class="row">
+          <div>
+            <label>Últimos minutos (rápido)</label>
+            <div class="row">
+              <button class="primary" data-min="15">15 min</button>
+              <button class="primary" data-min="30">30 min</button>
+              <button class="primary" data-min="60">60 min</button>
+              <button class="primary" data-min="180">180 min</button>
+            </div>
+          </div>
+
+          <div style="min-width: 260px;">
+            <label>Ou range (início)</label>
+            <input id="startDt" type="datetime-local" />
+          </div>
+
+          <div style="min-width: 260px;">
+            <label>Range (fim)</label>
+            <input id="endDt" type="datetime-local" />
+          </div>
+
+          <div>
+            <label>&nbsp;</label>
+            <button id="applyRange">Aplicar range</button>
+          </div>
+
+          <div>
+            <label>&nbsp;</label>
+            <button id="reload">Recarregar</button>
+          </div>
+        </div>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <canvas id="chart"></canvas>
+        <div class="status" id="status">—</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // Estado do filtro
+    let mode = { type: "last_minutes", minutes: 60, start: null, end: null };
+    let timer = null;
+
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $("status");
+
+    function setStatus(msg) { statusEl.textContent = msg; }
+
+    // Converte datetime-local (sem fuso) para ISO UTC (Z).
+    // Nota: datetime-local não tem timezone; aqui assumimos que o input representa "hora local do navegador"
+    // e convertemos para UTC.
+    function localInputToUtcIsoZ(value) {
+      if (!value) return null;
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return null;
+      return d.toISOString(); // já vem com Z
+    }
+
+    function fmtTime(isoZ) {
+      try {
+        // mostra HH:MM:SS
+        return String(isoZ).substring(11, 19) + " UTC";
+      } catch {
+        return isoZ;
+      }
+    }
+
+    const ctx = $("chart");
+
+    const chart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [],
+        datasets: []
+      },
+      options: {
+        responsive: true,
+        animation: false,
+        interaction: { mode: "index", intersect: false },
+        plugins: {
+          legend: { display: true }
+        },
+        scales: {
+          x: { ticks: { maxTicksLimit: 10 } },
+          y: { beginAtZero: true }
+        }
+      }
+    });
+
+    function buildDatasets(seriesMode, series) {
+      // series: {pm1:[], pm25:[], pm10:[]}
+      const ds = [];
+      const add = (label, data) => ds.push({ label, data, tension: 0.25, pointRadius: 0 });
+
+      if (seriesMode === "pm25") add("PM2.5 (µg/m³)", series.pm25);
+      if (seriesMode === "pm25_pm1") { add("PM2.5 (µg/m³)", series.pm25); add("PM1.0 (µg/m³)", series.pm1); }
+      if (seriesMode === "pm25_pm10") { add("PM2.5 (µg/m³)", series.pm25); add("PM10 (µg/m³)", series.pm10); }
+      if (seriesMode === "all") { add("PM1.0 (µg/m³)", series.pm1); add("PM2.5 (µg/m³)", series.pm25); add("PM10 (µg/m³)", series.pm10); }
+
+      return ds;
+    }
+
+    async function fetchChart() {
+      const base = $("apiBase").value.replace(/\/+$/, "");
+      let url = base + "/chart?limit=2000";
+
+      if (mode.type === "last_minutes") {
+        url += "&last_minutes=" + encodeURIComponent(String(mode.minutes));
+        $("kpiMode").textContent = `Últimos ${mode.minutes} min`;
+      } else {
+        url += "&start=" + encodeURIComponent(mode.start) + "&end=" + encodeURIComponent(mode.end);
+        $("kpiMode").textContent = `Range`;
+      }
+
+      const startMs = Date.now();
+      setStatus("Carregando…");
+
+      let res;
+      try {
+        res = await fetch(url, { cache: "no-store" });
+      } catch (fetchError) {
+        // Detecta erro de CORS ou rede
+        if (fetchError.message.includes("Failed to fetch") || fetchError.message.includes("network")) {
+          throw new Error("CORS: A API bloqueou a requisição. Configure CORS no servidor para permitir localhost ou use um proxy.");
+        }
+        throw fetchError;
+      }
+      
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const js = await res.json();
+      if (!js.ok) throw new Error("Resposta inválida da API");
+
+      const labels = (js.labels || []).map(iso => fmtTime(iso));
+      const series = js.series || { pm1: [], pm25: [], pm10: [] };
+
+      const seriesMode = $("seriesMode").value;
+      const datasets = buildDatasets(seriesMode, series);
+
+      chart.data.labels = labels;
+      chart.data.datasets = datasets;
+      chart.update();
+
+      // KPI: último PM2.5
+      const pm25 = (series.pm25 || []).filter(v => v !== null && v !== undefined);
+      const lastIdx = (js.labels || []).length - 1;
+
+      if (pm25.length && lastIdx >= 0) {
+        const lastLabelIso = (js.labels || [])[lastIdx];
+        const lastPm25 = (series.pm25 || [])[lastIdx];
+
+        if (lastPm25 !== null && lastPm25 !== undefined) {
+          $("kpiPm25").textContent = Number(lastPm25).toFixed(1);
+        } else {
+          $("kpiPm25").textContent = "—";
+        }
+
+        $("kpiTime").textContent = fmtTime(lastLabelIso);
+      } else {
+        $("kpiPm25").textContent = "—";
+        $("kpiTime").textContent = "—";
+      }
+
+      setStatus(`OK • pontos: ${js.meta?.points ?? labels.length} • ${Date.now() - startMs} ms`);
+    }
+
+    async function reloadNow() {
+      try {
+        await fetchChart();
+      } catch (e) {
+        let errorMsg = e.message || String(e);
+        // Detecta erro de CORS ou rede
+        if (errorMsg.includes("CORS") || errorMsg.includes("blocked") || 
+            errorMsg.includes("Access-Control") || errorMsg.includes("Failed to fetch") ||
+            errorMsg.includes("network")) {
+          errorMsg = "CORS: A API bloqueou a requisição. Configure CORS no servidor para permitir localhost ou use um proxy CORS.";
+        }
+        setStatus("Erro: " + errorMsg);
+        console.error("Erro ao carregar dados:", e);
+      }
+    }
+
+    function resetTimerIfNeeded() {
+      if (timer) { clearInterval(timer); timer = null; }
+
+      const auto = $("autoRefresh").value;
+      if (auto === "on" && mode.type === "last_minutes") {
+        timer = setInterval(reloadNow, 10000);
+      }
+    }
+
+    // Botões de minutos
+    document.querySelectorAll("button[data-min]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const m = Number(btn.getAttribute("data-min"));
+        mode = { type: "last_minutes", minutes: m, start: null, end: null };
+        resetTimerIfNeeded();
+        reloadNow();
+      });
+    });
+
+    // Aplicar range
+    $("applyRange").addEventListener("click", () => {
+      const startIso = localInputToUtcIsoZ($("startDt").value);
+      const endIso = localInputToUtcIsoZ($("endDt").value);
+
+      if (!startIso || !endIso) {
+        setStatus("Preencha início e fim do range.");
+        return;
+      }
+      mode = { type: "range", start: startIso, end: endIso, minutes: null };
+      resetTimerIfNeeded();
+      reloadNow();
+    });
+
+    $("reload").addEventListener("click", () => reloadNow());
+    $("autoRefresh").addEventListener("change", () => resetTimerIfNeeded());
+    $("seriesMode").addEventListener("change", () => reloadNow());
+
+    // Inicializa
+    resetTimerIfNeeded();
+    reloadNow();
+  </script>
+</body>
+</html>
