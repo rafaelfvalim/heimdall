@@ -52,7 +52,14 @@
           <div>
             <label>API Base URL</label>
             <input id="apiBase" style="width: 360px;"
-                   value="https://sites-automator.aal5pu.easypanel.host" />
+                   value="__API_BASE_URL__" />
+          </div>
+
+          <div>
+            <label>API Key</label>
+            <input id="apiKey" type="password" style="width: 280px;"
+                   value="__API_KEY__"
+                   placeholder="Digite a chave da API" />
           </div>
 
           <div>
@@ -183,7 +190,14 @@
 
     async function fetchChart() {
       const base = $("apiBase").value.replace(/\/+$/, "");
-      let url = base + "/chart?limit=2000";
+      const apiKey = $("apiKey").value.trim();
+      
+      if (!apiKey) {
+        setStatus("Erro: API Key é obrigatória.");
+        return;
+      }
+      
+      let url = base + "/chart?limit=2000&api_key=" + encodeURIComponent(apiKey);
 
       if (mode.type === "last_minutes") {
         url += "&last_minutes=" + encodeURIComponent(String(mode.minutes));
