@@ -30,7 +30,7 @@
   <div class="wrap">
     <div class="card">
       <h2 style="margin:0 0 6px 0;">Hemdall Monitor - IOT Valira</h2>
-      <div class="muted">Fonte: endpoint <span class="badge">/chart</span> (UTC)</div>
+      <div class="muted">Fonte: endpoint <span class="badge">/chart</span> (America/São_Paulo)</div>
 
       <div class="row" style="margin-top: 14px;">
         <div class="kpi">
@@ -38,7 +38,7 @@
           <div id="kpiPm25" style="font-size: 30px;">—</div>
         </div>
         <div class="kpi">
-          <div class="muted">Último horário (UTC)</div>
+          <div class="muted">Último horário (America/São_Paulo)</div>
           <div id="kpiTime" style="font-size: 16px;">—</div>
         </div>
         <div class="kpi">
@@ -125,20 +125,64 @@
 
     function setStatus(msg) { statusEl.textContent = msg; }
 
-    // Converte datetime-local (sem fuso) para ISO UTC (Z).
-    // Nota: datetime-local não tem timezone; aqui assumimos que o input representa "hora local do navegador"
-    // e convertemos para UTC.
+    // Converte datetime-local (horário de São Paulo) para ISO UTC (Z) para enviar à API
     function localInputToUtcIsoZ(value) {
       if (!value) return null;
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return null;
-      return d.toISOString(); // já vem com Z
+      
+      // datetime-local retorna formato "YYYY-MM-DDTHH:mm" sem timezone
+      // Assumimos que o valor digitado é horário de São Paulo
+      const [datePart, timePart] = value.split("T");
+      if (!datePart || !timePart) return null;
+      
+      // Estratégia: criar uma data em UTC e ajustar iterativamente até que
+      // quando formatada em SP dê o valor desejado
+      // Começa com aproximação: SP geralmente está UTC-3
+      let candidate = new Date(datePart + "T" + timePart + ":00Z");
+      candidate.setHours(candidate.getHours() + 3); // Aproximação inicial
+      
+      // Refina usando iteração (máximo 10 tentativas)
+      for (let i = 0; i < 10; i++) {
+        const formatter = new Intl.DateTimeFormat("en-US", {
+          timeZone: "America/Sao_Paulo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+        
+        const parts = formatter.formatToParts(candidate);
+        const formattedHour = parts.find(p => p.type === "hour").value;
+        const formattedMinute = parts.find(p => p.type === "minute").value;
+        const [desiredHour, desiredMinute] = timePart.split(":");
+        
+        if (formattedHour === desiredHour && formattedMinute === desiredMinute) {
+          break; // Encontrou correspondência
+        }
+        
+        // Ajusta: calcula diferença e aplica
+        const hourDiff = parseInt(desiredHour) - parseInt(formattedHour);
+        candidate.setHours(candidate.getHours() + hourDiff);
+      }
+      
+      if (Number.isNaN(candidate.getTime())) return null;
+      return candidate.toISOString();
     }
 
+    // Converte ISO UTC para horário de São Paulo e formata
     function fmtTime(isoZ) {
       try {
-        // mostra HH:MM:SS
-        return String(isoZ).substring(11, 19) + " UTC";
+        const date = new Date(isoZ);
+        // Formata para America/São_Paulo
+        const formatter = new Intl.DateTimeFormat("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: false
+        });
+        return formatter.format(date) + " BRT";
       } catch {
         return isoZ;
       }
