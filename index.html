@@ -36,16 +36,26 @@
       <h2 style="margin:0 0 6px 0;">Hemdall Monitor - IOT Valira</h2>
       <div class="muted">Fonte: endpoint <span class="badge">/chart</span> (America/São_Paulo)</div>
 
-      <div class="row" style="margin-top: 14px;">
-        <div class="kpi" style="min-width: 300px; flex: 1;">
+      <div style="margin-top: 14px;">
+        <div class="kpi" style="min-width: 300px; margin-bottom: 12px;">
           <div class="muted">Últimas 5 leituras PM2.5 (µg/m³)</div>
           <div id="kpiReadings" style="font-size: 14px; margin-top: 8px;">
             <div style="text-align: center; color: #999;">—</div>
           </div>
         </div>
-        <div class="kpi">
-          <div class="muted">Modo</div>
-          <div id="kpiMode" style="font-size: 16px;">—</div>
+        <div class="row">
+          <div class="kpi">
+            <div class="muted">Modo</div>
+            <div id="kpiMode" style="font-size: 16px;">—</div>
+          </div>
+          <div class="kpi">
+            <div class="muted">Tipo de leitura</div>
+            <div id="kpiSeriesType" style="font-size: 16px;">—</div>
+          </div>
+          <div class="kpi">
+            <div class="muted">Média (últimas 5 leituras)</div>
+            <div id="kpiAverage" style="font-size: 16px; font-weight: 600;">—</div>
+          </div>
         </div>
       </div>
 
@@ -236,6 +246,8 @@
       
       let url = base + "/chart?limit=2000&api_key=" + encodeURIComponent(apiKey);
 
+      const seriesMode = $("seriesMode").value;
+      
       if (mode.type === "last_minutes") {
         url += "&last_minutes=" + encodeURIComponent(String(mode.minutes));
         $("kpiMode").textContent = `Últimos ${mode.minutes} min`;
@@ -243,6 +255,15 @@
         url += "&start=" + encodeURIComponent(mode.start) + "&end=" + encodeURIComponent(mode.end);
         $("kpiMode").textContent = `Range`;
       }
+      
+      // Atualiza tipo de leitura
+      const seriesTypeMap = {
+        "pm25": "PM2.5",
+        "pm25_pm1": "PM2.5 + PM1.0",
+        "pm25_pm10": "PM2.5 + PM10",
+        "all": "PM1.0 + PM2.5 + PM10"
+      };
+      $("kpiSeriesType").textContent = seriesTypeMap[seriesMode] || "—";
 
       const startMs = Date.now();
       setStatus("Carregando…");
@@ -265,7 +286,6 @@
       const labels = (js.labels || []).map(iso => fmtTime(iso));
       const series = js.series || { pm1: [], pm25: [], pm10: [] };
 
-      const seriesMode = $("seriesMode").value;
       const datasets = buildDatasets(seriesMode, series);
 
       chart.data.labels = labels;
@@ -299,8 +319,14 @@
             </div>
           `;
         }).join("");
+        
+        // Calcula a média das últimas 5 leituras
+        const sum = validReadings.reduce((acc, reading) => acc + Number(reading.value), 0);
+        const average = sum / validReadings.length;
+        $("kpiAverage").textContent = average.toFixed(1) + " µg/m³";
       } else {
         readingsContainer.innerHTML = '<div style="text-align: center; color: #999;">Nenhuma leitura disponível</div>';
+        $("kpiAverage").textContent = "—";
       }
 
       setStatus(`OK • pontos: ${js.meta?.points ?? labels.length} • ${Date.now() - startMs} ms`);
