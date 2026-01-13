@@ -4,129 +4,494 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Monitor PMS5003 (PM2.5)</title>
+
   <style>
-    :root { color-scheme: light; }
-    body { font-family: Arial, sans-serif; margin: 24px; }
-    .wrap { max-width: 1100px; margin: 0 auto; }
-    .card { padding: 16px; border: 1px solid #ddd; border-radius: 12px; }
-    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
-    .kpi { padding: 12px; border: 1px solid #eee; border-radius: 10px; min-width: 220px; }
-    .muted { color: #666; font-size: 12px; }
-    label { display: block; font-size: 12px; color: #444; margin-bottom: 6px; }
-    input, button, select {
-      padding: 10px; border: 1px solid #ccc; border-radius: 10px;
-      font-size: 14px; background: #fff;
+    :root{
+      --bg: #0b1020;
+      --surface: rgba(255,255,255,.06);
+      --surface-2: rgba(255,255,255,.08);
+      --border: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --muted-2: rgba(255,255,255,.55);
+      --shadow: 0 18px 40px rgba(0,0,0,.35);
+      --radius: 18px;
+      --radius-sm: 14px;
+      --focus: 0 0 0 3px rgba(130, 160, 255, .35);
+      --accent1: #7f00ff;   /* Valira vibe */
+      --accent2: #00d4ff;
+      --ok: #27c29b;
+      --warn: #f1b54a;
+      --bad: #ff5b6e;
+      color-scheme: dark;
     }
-    button { cursor: pointer; }
-    button.primary { font-weight: 600; }
-    .controls { margin-top: 14px; }
-    .sep { height: 1px; background: #eee; margin: 16px 0; }
-    canvas { width: 100%; height: 440px; }
-    .status { margin-top: 8px; font-size: 12px; color: #666; }
-    .badge { display:inline-block; padding: 2px 8px; border:1px solid #ddd; border-radius: 999px; font-size: 12px; }
-    .reading-item { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #f0f0f0; }
-    .reading-item:last-child { border-bottom: none; }
-    .reading-value { font-weight: 600; color: #333; }
-    .reading-time { color: #666; font-size: 11px; }
+
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(900px 600px at 15% 10%, rgba(127,0,255,.28), transparent 60%),
+        radial-gradient(900px 600px at 85% 0%, rgba(0,212,255,.18), transparent 55%),
+        radial-gradient(900px 700px at 50% 95%, rgba(255,91,110,.10), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      padding: 28px 16px 60px;
+    }
+
+    .wrap{
+      max-width: 1120px;
+      margin: 0 auto;
+    }
+
+    .shell{
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 6px);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .topbar{
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(127,0,255,.20), rgba(0,212,255,.12));
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap: wrap;
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      min-width: 260px;
+    }
+
+    h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing: .2px;
+      line-height: 1.2;
+    }
+
+    .subtitle{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      align-items:center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.18);
+      font-size: 12px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+
+    .dot{
+      width:8px; height:8px; border-radius: 99px;
+      background: rgba(255,255,255,.35);
+      box-shadow: 0 0 0 3px rgba(255,255,255,.10);
+    }
+
+    .content{
+      padding: 18px;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.35fr .65fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .card{
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.05);
+      box-shadow: 0 10px 26px rgba(0,0,0,.22);
+      overflow: hidden;
+    }
+
+    .card-h{
+      padding: 14px 14px 12px;
+      border-bottom: 1px solid var(--border);
+      display:flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .card-h strong{
+      font-size: 13px;
+      letter-spacing: .2px;
+    }
+
+    .muted{
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .card-b{ padding: 14px; }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: 1.2fr 1fr 1fr;
+      gap: 12px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 980px){
+      .kpis{ grid-template-columns: 1fr; }
+    }
+
+    .kpi{
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      background: rgba(0,0,0,.18);
+      padding: 12px;
+    }
+
+    .kpi .label{
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .kpi .value{
+      font-size: 16px;
+      font-weight: 650;
+      letter-spacing: .2px;
+    }
+
+    .kpi .value.big{
+      font-size: 18px;
+    }
+
+    /* Leituras */
+    #kpiReadings{
+      margin-top: 10px;
+      border-top: 1px solid rgba(255,255,255,.08);
+      padding-top: 10px;
+    }
+
+    .reading-item{
+      display:flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .reading-item:last-child{ border-bottom:none; }
+    .reading-value{
+      font-weight: 700;
+      color: var(--text);
+    }
+    .reading-time{
+      color: var(--muted-2);
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    /* Controls */
+    .controls{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    .row{
+      display:flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: end;
+    }
+
+    .field{
+      display:flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 220px;
+    }
+
+    label{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    input, select, button{
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      padding: 10px 12px;
+      font-size: 14px;
+      outline: none;
+      transition: transform .06s ease, border-color .12s ease, background .12s ease, box-shadow .12s ease;
+    }
+
+    input:focus, select:focus, button:focus{
+      box-shadow: var(--focus);
+      border-color: rgba(130,160,255,.45);
+    }
+
+    button{
+      cursor: pointer;
+      font-weight: 650;
+    }
+    button:active{ transform: translateY(1px); }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn.primary{
+      background: linear-gradient(90deg, rgba(127,0,255,.55), rgba(0,212,255,.35));
+      border-color: rgba(255,255,255,.14);
+    }
+    .btn.ghost{
+      background: rgba(255,255,255,.06);
+    }
+    .btn:hover{
+      border-color: rgba(255,255,255,.22);
+      background: rgba(255,255,255,.09);
+    }
+    .btn.primary:hover{
+      background: linear-gradient(90deg, rgba(127,0,255,.68), rgba(0,212,255,.42));
+    }
+
+    .pills{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .sep{
+      height: 1px;
+      background: rgba(255,255,255,.10);
+      margin: 4px 0;
+    }
+
+    /* Chart container */
+    .chartbox{
+      padding: 10px 12px 12px;
+    }
+    .chartframe{
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(0,0,0,.16);
+      border-radius: var(--radius);
+      padding: 12px;
+      overflow: hidden;
+    }
+    canvas{
+      width: 100%;
+      height: 440px;
+    }
+
+    /* Status */
+    .status{
+      margin-top: 10px;
+      font-size: 12px;
+      color: var(--muted);
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .status strong{
+      color: var(--text);
+      font-weight: 700;
+    }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted-2);
+    }
+
+    /* Small helpers */
+    .right{
+      margin-left:auto;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="card">
-      <h2 style="margin:0 0 6px 0;">Hemdall Monitor - IOT Valira</h2>
-      <div class="muted">Fonte: endpoint <span class="badge">/chart</span> (America/São_Paulo)</div>
-
-      <div style="margin-top: 14px;">
-        <div class="kpi" style="min-width: 300px; margin-bottom: 12px;">
-          <div class="muted">Últimas 5 leituras PM2.5 (µg/m³)</div>
-          <div id="kpiReadings" style="font-size: 14px; margin-top: 8px;">
-            <div style="text-align: center; color: #999;">—</div>
-          </div>
-        </div>
-        <div class="row">
-          <div class="kpi">
-            <div class="muted">Modo</div>
-            <div id="kpiMode" style="font-size: 16px;">—</div>
-          </div>
-          <div class="kpi">
-            <div class="muted">Tipo de leitura</div>
-            <div id="kpiSeriesType" style="font-size: 16px;">—</div>
-          </div>
-          <div class="kpi">
-            <div class="muted">Média (últimas 5 leituras)</div>
-            <div id="kpiAverage" style="font-size: 16px; font-weight: 600;">—</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="controls">
-        <!-- Campos ocultos para variáveis de ambiente -->
-        <input id="apiBase" type="hidden" value="__API_BASE_URL__" />
-        <input id="apiKey" type="hidden" value="__API_KEY__" />
-        
-        <div class="row">
-          <div>
-            <label>Atualização automática (modo minutos)</label>
-            <select id="autoRefresh">
-              <option value="on" selected>Ligado (10s)</option>
-              <option value="off">Desligado</option>
-            </select>
-          </div>
-
-          <div>
-            <label>Séries</label>
-            <select id="seriesMode">
-              <option value="pm25" selected>PM2.5</option>
-              <option value="pm25_pm1">PM2.5 + PM1.0</option>
-              <option value="pm25_pm10">PM2.5 + PM10</option>
-              <option value="all">PM1.0 + PM2.5 + PM10</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="sep"></div>
-
-        <div class="row">
-          <div>
-            <label>Últimos minutos (rápido)</label>
-            <div class="row">
-              <button class="primary" data-min="15">15 min</button>
-              <button class="primary" data-min="30">30 min</button>
-              <button class="primary" data-min="60">60 min</button>
-              <button class="primary" data-min="180">180 min</button>
+    <div class="shell">
+      <div class="topbar">
+        <div class="brand">
+          <div class="title">
+            <h1>Hemdall Monitor — IOT Valira</h1>
+            <div class="subtitle">
+              <span class="badge"><span class="dot"></span> Fonte: <strong>/chart</strong></span>
+              <span class="badge">Timezone: <strong>America/São_Paulo</strong></span>
             </div>
           </div>
 
-          <div style="min-width: 260px;">
-            <label>Ou range (início)</label>
-            <input id="startDt" type="datetime-local" />
-          </div>
-
-          <div style="min-width: 260px;">
-            <label>Range (fim)</label>
-            <input id="endDt" type="datetime-local" />
-          </div>
-
-          <div>
-            <label>&nbsp;</label>
-            <button id="applyRange">Aplicar range</button>
-          </div>
-
-          <div>
-            <label>&nbsp;</label>
-            <button id="reload">Recarregar</button>
+          <div class="right">
+            <span class="badge" id="badgeLive"><span class="dot"></span> Status: <strong id="badgeStatus">—</strong></span>
           </div>
         </div>
       </div>
 
-      <div style="margin-top: 14px;">
-        <canvas id="chart"></canvas>
-        <div class="status" id="status">—</div>
-      </div>
-    </div>
-  </div>
+      <div class="content">
+        <!-- Campos ocultos para variáveis de ambiente -->
+        <input id="apiBase" type="hidden" value="__API_BASE_URL__" />
+        <input id="apiKey" type="hidden" value="__API_KEY__" />
+
+        <div class="grid">
+          <!-- KPIs -->
+          <div class="card">
+            <div class="card-h">
+              <strong>Resumo</strong>
+              <span class="muted">PM2.5 em µg/m³</span>
+            </div>
+
+            <div class="card-b">
+              <div class="kpis">
+                <div class="kpi">
+                  <div class="label">Últimas 5 leituras</div>
+                  <div class="value big" style="opacity:.92;">PM2.5</div>
+                  <div id="kpiReadings">
+                    <div style="text-align:center; color: rgba(255,255,255,.45); padding: 8px 0;">—</div>
+                  </div>
+                </div>
+
+                <div class="kpi">
+                  <div class="label">Modo</div>
+                  <div id="kpiMode" class="value">—</div>
+                  <div class="sep" style="margin:12px 0;"></div>
+                  <div class="label">Tipo de leitura</div>
+                  <div id="kpiSeriesType" class="value">—</div>
+                </div>
+
+                <div class="kpi">
+                  <div class="label">Média (últimas 5)</div>
+                  <div id="kpiAverage" class="value big">—</div>
+                  <div class="sep" style="margin:12px 0;"></div>
+                  <div class="label">Atualização</div>
+                  <div class="hint">Auto-refresh disponível no modo “últimos minutos”.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="card">
+            <div class="card-h">
+              <strong>Controles</strong>
+              <span class="muted">Filtros e séries</span>
+            </div>
+
+            <div class="card-b">
+              <div class="controls">
+                <div class="row">
+                  <div class="field">
+                    <label>Atualização automática (modo minutos)</label>
+                    <select id="autoRefresh">
+                      <option value="on" selected>Ligado (10s)</option>
+                      <option value="off">Desligado</option>
+                    </select>
+                  </div>
+
+                  <div class="field">
+                    <label>Séries</label>
+                    <select id="seriesMode">
+                      <option value="pm25" selected>PM2.5</option>
+                      <option value="pm25_pm1">PM2.5 + PM1.0</option>
+                      <option value="pm25_pm10">PM2.5 + PM10</option>
+                      <option value="all">PM1.0 + PM2.5 + PM10</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="sep"></div>
+
+                <div class="field" style="min-width: 100%;">
+                  <label>Últimos minutos (rápido)</label>
+                  <div class="pills">
+                    <button class="btn primary" data-min="15">15 min</button>
+                    <button class="btn primary" data-min="30">30 min</button>
+                    <button class="btn primary" data-min="60">60 min</button>
+                    <button class="btn primary" data-min="180">180 min</button>
+                  </div>
+                </div>
+
+                <div class="row">
+                  <div class="field" style="min-width: 240px;">
+                    <label>Range (início)</label>
+                    <input id="startDt" type="datetime-local" />
+                  </div>
+
+                  <div class="field" style="min-width: 240px;">
+                    <label>Range (fim)</label>
+                    <input id="endDt" type="datetime-local" />
+                  </div>
+
+                  <button class="btn ghost" id="applyRange">Aplicar range</button>
+                  <button class="btn ghost" id="reload">Recarregar</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="card" style="margin-top:14px;">
+          <div class="card-h">
+            <strong>Gráfico</strong>
+            <span class="muted">Linha temporal</span>
+          </div>
+
+          <div class="chartbox">
+            <div class="chartframe">
+              <canvas id="chart"></canvas>
+
+              <div class="status">
+                <div id="status">—</div>
+                <div class="hint">Dica: use “últimos minutos” para auto-refresh.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /content -->
+    </div><!-- /shell -->
+  </div><!-- /wrap -->
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script>
     // Estado do filtro
     let mode = { type: "last_minutes", minutes: 60, start: null, end: null };
@@ -135,24 +500,22 @@
     const $ = (id) => document.getElementById(id);
     const statusEl = $("status");
 
-    function setStatus(msg) { statusEl.textContent = msg; }
+    function setStatus(msg) {
+      statusEl.textContent = msg;
+      const badge = $("badgeStatus");
+      if (badge) badge.textContent = msg.startsWith("OK") ? "OK" : (msg.startsWith("Erro") ? "Erro" : "—");
+    }
 
     // Converte datetime-local (horário de São Paulo) para ISO UTC (Z) para enviar à API
     function localInputToUtcIsoZ(value) {
       if (!value) return null;
-      
-      // datetime-local retorna formato "YYYY-MM-DDTHH:mm" sem timezone
-      // Assumimos que o valor digitado é horário de São Paulo
+
       const [datePart, timePart] = value.split("T");
       if (!datePart || !timePart) return null;
-      
-      // Estratégia: criar uma data em UTC e ajustar iterativamente até que
-      // quando formatada em SP dê o valor desejado
-      // Começa com aproximação: SP geralmente está UTC-3
+
       let candidate = new Date(datePart + "T" + timePart + ":00Z");
-      candidate.setHours(candidate.getHours() + 3); // Aproximação inicial
-      
-      // Refina usando iteração (máximo 10 tentativas)
+      candidate.setHours(candidate.getHours() + 3); // aproximação
+
       for (let i = 0; i < 10; i++) {
         const formatter = new Intl.DateTimeFormat("en-US", {
           timeZone: "America/Sao_Paulo",
@@ -163,21 +526,18 @@
           minute: "2-digit",
           hour12: false
         });
-        
+
         const parts = formatter.formatToParts(candidate);
         const formattedHour = parts.find(p => p.type === "hour").value;
         const formattedMinute = parts.find(p => p.type === "minute").value;
         const [desiredHour, desiredMinute] = timePart.split(":");
-        
-        if (formattedHour === desiredHour && formattedMinute === desiredMinute) {
-          break; // Encontrou correspondência
-        }
-        
-        // Ajusta: calcula diferença e aplica
+
+        if (formattedHour === desiredHour && formattedMinute === desiredMinute) break;
+
         const hourDiff = parseInt(desiredHour) - parseInt(formattedHour);
         candidate.setHours(candidate.getHours() + hourDiff);
       }
-      
+
       if (Number.isNaN(candidate.getTime())) return null;
       return candidate.toISOString();
     }
@@ -186,7 +546,6 @@
     function fmtTime(isoZ) {
       try {
         const date = new Date(isoZ);
-        // Formata para America/São_Paulo
         const formatter = new Intl.DateTimeFormat("pt-BR", {
           timeZone: "America/Sao_Paulo",
           hour: "2-digit",
@@ -204,17 +563,12 @@
 
     const chart = new Chart(ctx, {
       type: "line",
-      data: {
-        labels: [],
-        datasets: []
-      },
+      data: { labels: [], datasets: [] },
       options: {
         responsive: true,
         animation: false,
         interaction: { mode: "index", intersect: false },
-        plugins: {
-          legend: { display: true }
-        },
+        plugins: { legend: { display: true } },
         scales: {
           x: { ticks: { maxTicksLimit: 10 } },
           y: { beginAtZero: true }
@@ -223,7 +577,6 @@
     });
 
     function buildDatasets(seriesMode, series) {
-      // series: {pm1:[], pm25:[], pm10:[]}
       const ds = [];
       const add = (label, data) => ds.push({ label, data, tension: 0.25, pointRadius: 0 });
 
@@ -238,16 +591,16 @@
     async function fetchChart() {
       const base = $("apiBase").value.replace(/\/+$/, "");
       const apiKey = $("apiKey").value.trim();
-      
+
       if (!apiKey) {
         setStatus("Erro: API Key é obrigatória.");
         return;
       }
-      
+
       let url = base + "/chart?limit=2000&api_key=" + encodeURIComponent(apiKey);
 
       const seriesMode = $("seriesMode").value;
-      
+
       if (mode.type === "last_minutes") {
         url += "&last_minutes=" + encodeURIComponent(String(mode.minutes));
         $("kpiMode").textContent = `Últimos ${mode.minutes} min`;
@@ -255,8 +608,7 @@
         url += "&start=" + encodeURIComponent(mode.start) + "&end=" + encodeURIComponent(mode.end);
         $("kpiMode").textContent = `Range`;
       }
-      
-      // Atualiza tipo de leitura
+
       const seriesTypeMap = {
         "pm25": "PM2.5",
         "pm25_pm1": "PM2.5 + PM1.0",
@@ -272,13 +624,12 @@
       try {
         res = await fetch(url, { cache: "no-store" });
       } catch (fetchError) {
-        // Detecta erro de CORS ou rede
         if (fetchError.message.includes("Failed to fetch") || fetchError.message.includes("network")) {
           throw new Error("CORS: A API bloqueou a requisição. Configure CORS no servidor para permitir localhost ou use um proxy.");
         }
         throw fetchError;
       }
-      
+
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const js = await res.json();
       if (!js.ok) throw new Error("Resposta inválida da API");
@@ -296,20 +647,15 @@
       const readingsContainer = $("kpiReadings");
       const pm25 = series.pm25 || [];
       const labelsIso = js.labels || [];
-      
-      // Filtra leituras válidas com seus índices
+
       const validReadings = [];
       for (let i = labelsIso.length - 1; i >= 0; i--) {
         if (pm25[i] !== null && pm25[i] !== undefined) {
-          validReadings.push({
-            value: pm25[i],
-            time: labelsIso[i],
-            index: i
-          });
+          validReadings.push({ value: pm25[i], time: labelsIso[i], index: i });
           if (validReadings.length >= 5) break;
         }
       }
-      
+
       if (validReadings.length > 0) {
         readingsContainer.innerHTML = validReadings.map(reading => {
           return `
@@ -319,13 +665,12 @@
             </div>
           `;
         }).join("");
-        
-        // Calcula a média das últimas 5 leituras
+
         const sum = validReadings.reduce((acc, reading) => acc + Number(reading.value), 0);
         const average = sum / validReadings.length;
         $("kpiAverage").textContent = average.toFixed(1) + " µg/m³";
       } else {
-        readingsContainer.innerHTML = '<div style="text-align: center; color: #999;">Nenhuma leitura disponível</div>';
+        readingsContainer.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,.45); padding: 8px 0;">Nenhuma leitura disponível</div>';
         $("kpiAverage").textContent = "—";
       }
 
@@ -337,8 +682,7 @@
         await fetchChart();
       } catch (e) {
         let errorMsg = e.message || String(e);
-        // Detecta erro de CORS ou rede
-        if (errorMsg.includes("CORS") || errorMsg.includes("blocked") || 
+        if (errorMsg.includes("CORS") || errorMsg.includes("blocked") ||
             errorMsg.includes("Access-Control") || errorMsg.includes("Failed to fetch") ||
             errorMsg.includes("network")) {
           errorMsg = "CORS: A API bloqueou a requisição. Configure CORS no servidor para permitir localhost ou use um proxy CORS.";
