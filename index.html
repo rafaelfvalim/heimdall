@@ -213,6 +213,40 @@
       white-space: nowrap;
     }
 
+    /* Data Table */
+    .table-container{
+      overflow-x: auto;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .data-table{
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .data-table thead{
+      background: rgba(255,255,255,.05);
+    }
+    .data-table th{
+      padding: 10px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      white-space: nowrap;
+    }
+    .data-table td{
+      padding: 8px 12px;
+      color: var(--text);
+      border-bottom: 1px solid rgba(255,255,255,.05);
+    }
+    .data-table tbody tr:hover{
+      background: rgba(255,255,255,.03);
+    }
+    .data-table tbody tr:last-child td{
+      border-bottom: none;
+    }
+
     /* Controls */
     .controls{
       display:grid;
@@ -480,8 +514,24 @@
 
               <div class="status">
                 <div id="status">—</div>
-                <div class="hint">Dica: use “últimos minutos” para auto-refresh.</div>
+                <div class="hint">Dica: use "últimos minutos" para auto-refresh.</div>
               </div>
+            </div>
+            
+            <div class="table-container" style="margin-top: 20px;">
+              <table id="dataTable" class="data-table">
+                <thead>
+                  <tr>
+                    <th>Horário</th>
+                    <th id="colPm1" style="display: none;">PM1.0 (µg/m³)</th>
+                    <th id="colPm25">PM2.5 (µg/m³)</th>
+                    <th id="colPm10" style="display: none;">PM10 (µg/m³)</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Carregando dados...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -674,7 +724,55 @@
         $("kpiAverage").textContent = "—";
       }
 
+      // Atualiza tabela de dados
+      updateDataTable(labels, series, seriesMode, js.labels || []);
+
       setStatus(`OK • pontos: ${js.meta?.points ?? labels.length} • ${Date.now() - startMs} ms`);
+    }
+
+    function updateDataTable(labels, series, seriesMode, labelsIso) {
+      const tableBody = $("tableBody");
+      const pm1 = series.pm1 || [];
+      const pm25 = series.pm25 || [];
+      const pm10 = series.pm10 || [];
+      
+      // Mostra/oculta colunas baseado no filtro selecionado
+      const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
+      const showPm25 = true; // Sempre mostra PM2.5
+      const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
+      
+      $("colPm1").style.display = showPm1 ? "table-cell" : "none";
+      $("colPm10").style.display = showPm10 ? "table-cell" : "none";
+      
+      if (labels.length === 0) {
+        const colCount = 1 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0);
+        tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum dado disponível</td></tr>`;
+        return;
+      }
+      
+      // Cria as linhas da tabela (da mais recente para a mais antiga)
+      const rows = [];
+      for (let i = labels.length - 1; i >= 0; i--) {
+        const row = [];
+        row.push(`<td>${labels[i]}</td>`);
+        
+        if (showPm1) {
+          const pm1Value = pm1[i] !== null && pm1[i] !== undefined ? Number(pm1[i]).toFixed(1) : "—";
+          row.push(`<td>${pm1Value}</td>`);
+        }
+        
+        const pm25Value = pm25[i] !== null && pm25[i] !== undefined ? Number(pm25[i]).toFixed(1) : "—";
+        row.push(`<td>${pm25Value}</td>`);
+        
+        if (showPm10) {
+          const pm10Value = pm10[i] !== null && pm10[i] !== undefined ? Number(pm10[i]).toFixed(1) : "—";
+          row.push(`<td>${pm10Value}</td>`);
+        }
+        
+        rows.push(`<tr>${row.join("")}</tr>`);
+      }
+      
+      tableBody.innerHTML = rows.join("");
     }
 
     async function reloadNow() {
