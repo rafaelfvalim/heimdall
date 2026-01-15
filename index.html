@@ -235,6 +235,31 @@
       border-bottom: 1px solid rgba(255,255,255,.10);
       white-space: nowrap;
     }
+    .data-table th.sortable{
+      cursor: pointer;
+      user-select: none;
+      position: relative;
+      padding-right: 24px;
+    }
+    .data-table th.sortable:hover{
+      background: rgba(255,255,255,.05);
+    }
+    .sort-indicator{
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 10px;
+      color: rgba(255,255,255,.3);
+    }
+    .data-table th.sortable[data-sort-direction="asc"] .sort-indicator::after{
+      content: "▲";
+      color: var(--text);
+    }
+    .data-table th.sortable[data-sort-direction="desc"] .sort-indicator::after{
+      content: "▼";
+      color: var(--text);
+    }
     .data-table td{
       padding: 8px 12px;
       color: var(--text);
@@ -522,10 +547,18 @@
               <table id="dataTable" class="data-table">
                 <thead>
                   <tr>
-                    <th>Horário</th>
-                    <th id="colPm1" style="display: none;">PM1.0 (µg/m³)</th>
-                    <th id="colPm25">PM2.5 (µg/m³)</th>
-                    <th id="colPm10" style="display: none;">PM10 (µg/m³)</th>
+                    <th class="sortable" data-sort="time">
+                      Horário <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colPm1" class="sortable" data-sort="pm1" style="display: none;">
+                      PM1.0 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colPm25" class="sortable" data-sort="pm25">
+                      PM2.5 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colPm10" class="sortable" data-sort="pm10" style="display: none;">
+                      PM10 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody id="tableBody">
@@ -730,11 +763,22 @@
       setStatus(`OK • pontos: ${js.meta?.points ?? labels.length} • ${Date.now() - startMs} ms`);
     }
 
+    // Variáveis globais para ordenação
+    let tableData = [];
+    let currentSort = { column: null, direction: null };
+    let tableListenersAdded = false;
+
     function updateDataTable(labels, series, seriesMode, labelsIso) {
       const tableBody = $("tableBody");
       const pm1 = series.pm1 || [];
       const pm25 = series.pm25 || [];
       const pm10 = series.pm10 || [];
+      
+      // Reseta ordenação quando novos dados são carregados
+      currentSort = { column: null, direction: null };
+      document.querySelectorAll('.data-table th.sortable').forEach(h => {
+        h.removeAttribute('data-sort-direction');
+      });
       
       // Mostra/oculta colunas baseado no filtro selecionado
       const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
@@ -747,30 +791,107 @@
       if (labels.length === 0) {
         const colCount = 1 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0);
         tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum dado disponível</td></tr>`;
+        tableData = [];
         return;
       }
       
-      // Cria as linhas da tabela (da mais recente para a mais antiga)
-      const rows = [];
-      for (let i = labels.length - 1; i >= 0; i--) {
+      // Armazena os dados para ordenação
+      tableData = [];
+      for (let i = 0; i < labels.length; i++) {
+        tableData.push({
+          time: labels[i],
+          timeIso: labelsIso[i],
+          pm1: pm1[i] !== null && pm1[i] !== undefined ? Number(pm1[i]) : null,
+          pm25: pm25[i] !== null && pm25[i] !== undefined ? Number(pm25[i]) : null,
+          pm10: pm10[i] !== null && pm10[i] !== undefined ? Number(pm10[i]) : null
+        });
+      }
+      
+      // Renderiza a tabela
+      renderTable(showPm1, showPm10);
+      
+      // Adiciona event listeners nos cabeçalhos (apenas uma vez)
+      if (!tableListenersAdded) {
+        document.querySelectorAll('.data-table th.sortable').forEach(th => {
+          th.addEventListener('click', () => {
+            const sortColumn = th.getAttribute('data-sort');
+            if (currentSort.column === sortColumn) {
+              // Alterna direção se clicar na mesma coluna
+              currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+              // Nova coluna, começa com ascendente
+              currentSort.column = sortColumn;
+              currentSort.direction = 'asc';
+            }
+            
+            // Atualiza indicadores visuais
+            document.querySelectorAll('.data-table th.sortable').forEach(h => {
+              h.removeAttribute('data-sort-direction');
+            });
+            th.setAttribute('data-sort-direction', currentSort.direction);
+            
+            // Re-renderiza a tabela
+            renderTable(showPm1, showPm10);
+          });
+        });
+        tableListenersAdded = true;
+      }
+    }
+
+    function renderTable(showPm1, showPm10) {
+      const tableBody = $("tableBody");
+      
+      if (tableData.length === 0) {
+        const colCount = 1 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0);
+        tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum dado disponível</td></tr>`;
+        return;
+      }
+      
+      // Ordena os dados
+      let sortedData = [...tableData];
+      if (currentSort.column && currentSort.direction) {
+        sortedData.sort((a, b) => {
+          let aVal, bVal;
+          
+          if (currentSort.column === 'time') {
+            // Ordena por data/hora (usa ISO para comparação)
+            aVal = new Date(a.timeIso).getTime();
+            bVal = new Date(b.timeIso).getTime();
+          } else {
+            // Ordena por valor numérico
+            aVal = a[currentSort.column] !== null ? a[currentSort.column] : -Infinity;
+            bVal = b[currentSort.column] !== null ? b[currentSort.column] : -Infinity;
+          }
+          
+          if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+      } else {
+        // Ordenação padrão: mais recente primeiro (reverso do índice)
+        sortedData.reverse();
+      }
+      
+      // Cria as linhas da tabela
+      const rows = sortedData.map(item => {
         const row = [];
-        row.push(`<td>${labels[i]}</td>`);
+        row.push(`<td>${item.time}</td>`);
         
         if (showPm1) {
-          const pm1Value = pm1[i] !== null && pm1[i] !== undefined ? Number(pm1[i]).toFixed(1) : "—";
+          const pm1Value = item.pm1 !== null ? item.pm1.toFixed(1) : "—";
           row.push(`<td>${pm1Value}</td>`);
         }
         
-        const pm25Value = pm25[i] !== null && pm25[i] !== undefined ? Number(pm25[i]).toFixed(1) : "—";
+        const pm25Value = item.pm25 !== null ? item.pm25.toFixed(1) : "—";
         row.push(`<td>${pm25Value}</td>`);
         
         if (showPm10) {
-          const pm10Value = pm10[i] !== null && pm10[i] !== undefined ? Number(pm10[i]).toFixed(1) : "—";
+          const pm10Value = item.pm10 !== null ? item.pm10.toFixed(1) : "—";
           row.push(`<td>${pm10Value}</td>`);
         }
         
-        rows.push(`<tr>${row.join("")}</tr>`);
-      }
+        return `<tr>${row.join("")}</tr>`;
+      });
       
       tableBody.innerHTML = rows.join("");
     }
