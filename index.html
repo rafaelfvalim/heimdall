@@ -1045,11 +1045,15 @@
       try {
         const urlObj = new URL(base);
         // Substitui "automator" por "api-rele" no hostname
-        const hostname = urlObj.hostname.replace("automator", "api-rele");
+        // sites-automator -> sites-api-rele
+        const hostname = urlObj.hostname.replace("sites-automator", "sites-api-rele");
         releUrl = `${urlObj.protocol}//${hostname}/rele`;
       } catch (e) {
         // Fallback: substitui diretamente na string
-        releUrl = base.replace("automator", "api-rele").replace(/\/chart.*$/, "") + "/rele";
+        releUrl = base.replace("sites-automator", "sites-api-rele").replace(/\/chart.*$/, "") + "/rele";
+        if (!releUrl.startsWith("http")) {
+          releUrl = base.replace(/\/chart.*$/, "").replace("automator", "api-rele") + "/rele";
+        }
       }
       
       releUrl += "?api_key=" + encodeURIComponent(apiKey);
