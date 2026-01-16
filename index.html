@@ -439,6 +439,13 @@
 
             <div class="card-b">
               <div class="kpis">
+                <div class="kpi" style="display: flex; flex-direction: column; align-items: center; min-width: 220px;">
+                  <div class="label" style="margin-bottom: 8px;">Velocímetro PM2.5</div>
+                  <canvas id="gaugeChart" width="220" height="130" style="max-width: 100%; height: auto;"></canvas>
+                  <div id="gaugeValue" style="margin-top: 10px; font-size: 18px; font-weight: 600; color: var(--text);">—</div>
+                  <div id="gaugeStatus" style="margin-top: 4px; font-size: 12px; color: var(--muted-2);">—</div>
+                </div>
+
                 <div class="kpi">
                   <div class="label">Últimas 5 leituras</div>
                   <div class="value big" style="opacity:.92;">PM2.5</div>
@@ -644,6 +651,124 @@
 
     const ctx = $("chart");
 
+    // Função para desenhar o velocímetro
+    function drawGauge(value) {
+      const canvas = document.getElementById("gaugeChart");
+      if (!canvas) return;
+      
+      const ctx = canvas.getContext("2d");
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height - 10;
+      const radius = 80;
+      const startAngle = Math.PI; // 180 graus (esquerda)
+      const endAngle = 0; // 0 graus (direita)
+      
+      // Limpa o canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Define os limites e cores
+      const maxValue = 50; // Valor máximo para o gauge
+      const greenMax = 12.0;
+      const yellowMax = 35.4;
+      
+      // Determina a cor baseada no valor
+      let color, status;
+      if (value === null || value === undefined || isNaN(value)) {
+        color = "#666";
+        status = "Sem dados";
+      } else if (value <= greenMax) {
+        color = "#4CAF50"; // Verde
+        status = "Bom";
+      } else if (value <= yellowMax) {
+        color = "#FFC107"; // Amarelo
+        status = "Moderado";
+      } else {
+        color = "#F44336"; // Vermelho
+        status = "Ruim";
+      }
+      
+      // Desenha o arco de fundo (cinza)
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+      ctx.strokeStyle = "rgba(255,255,255,0.1)";
+      ctx.lineWidth = 20;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      
+      // Desenha os segmentos coloridos
+      const greenEnd = startAngle - ((greenMax / maxValue) * Math.PI);
+      const yellowEnd = startAngle - ((yellowMax / maxValue) * Math.PI);
+      
+      // Segmento verde
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, startAngle, greenEnd, false);
+      ctx.strokeStyle = "#4CAF50";
+      ctx.lineWidth = 20;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      
+      // Segmento amarelo
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, greenEnd, yellowEnd, false);
+      ctx.strokeStyle = "#FFC107";
+      ctx.lineWidth = 20;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      
+      // Segmento vermelho
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, yellowEnd, endAngle, false);
+      ctx.strokeStyle = "#F44336";
+      ctx.lineWidth = 20;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      
+      // Desenha o ponteiro se houver valor
+      if (value !== null && value !== undefined && !isNaN(value)) {
+        const normalizedValue = Math.min(value, maxValue) / maxValue;
+        const angle = startAngle - (normalizedValue * Math.PI);
+        
+        ctx.save();
+        ctx.translate(centerX, centerY);
+        ctx.rotate(angle);
+        
+        // Desenha o ponteiro
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.lineTo(0, -radius + 10);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        
+        // Círculo no centro
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        
+        ctx.restore();
+      }
+      
+      // Atualiza o valor e status
+      const gaugeValue = $("gaugeValue");
+      const gaugeStatus = $("gaugeStatus");
+      
+      if (gaugeValue) {
+        if (value !== null && value !== undefined && !isNaN(value)) {
+          gaugeValue.textContent = value.toFixed(1) + " µg/m³";
+          gaugeValue.style.color = color;
+        } else {
+          gaugeValue.textContent = "—";
+          gaugeValue.style.color = "var(--text)";
+        }
+      }
+      
+      if (gaugeStatus) {
+        gaugeStatus.textContent = status;
+        gaugeStatus.style.color = color;
+      }
+    }
+
     const chart = new Chart(ctx, {
       type: "line",
       data: { labels: [], datasets: [] },
@@ -752,9 +877,14 @@
         const sum = validReadings.reduce((acc, reading) => acc + Number(reading.value), 0);
         const average = sum / validReadings.length;
         $("kpiAverage").textContent = average.toFixed(1) + " µg/m³";
+        
+        // Atualiza o velocímetro com o último valor
+        const lastValue = validReadings[0].value;
+        drawGauge(lastValue);
       } else {
         readingsContainer.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,.45); padding: 8px 0;">Nenhuma leitura disponível</div>';
         $("kpiAverage").textContent = "—";
+        drawGauge(null);
       }
 
       // Atualiza tabela de dados
@@ -949,6 +1079,7 @@
     $("seriesMode").addEventListener("change", () => reloadNow());
 
     // Inicializa
+    drawGauge(null); // Desenha o velocímetro inicialmente
     resetTimerIfNeeded();
     reloadNow();
   </script>
