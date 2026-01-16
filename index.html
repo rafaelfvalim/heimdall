@@ -666,40 +666,51 @@
       const yellowMax = 35.4;
       
       // Determina a cor e status baseada no valor
-      let color, status;
+      let color, status, displayValue;
       if (value === null || value === undefined || isNaN(value)) {
         color = "#666";
         status = "Sem dados";
-        value = 0; // Para exibir no gauge
-      } else if (value <= greenMax) {
-        color = "#4CAF50"; // Verde
-        status = "Bom";
-      } else if (value <= yellowMax) {
-        color = "#FFC107"; // Amarelo
-        status = "Moderado";
+        displayValue = 0; // Para exibir no gauge
       } else {
-        color = "#F44336"; // Vermelho
-        status = "Ruim";
+        displayValue = value;
+        if (value <= greenMax) {
+          color = "#4CAF50"; // Verde
+          status = "Bom";
+        } else if (value <= yellowMax) {
+          color = "#FFC107"; // Amarelo
+          status = "Moderado";
+        } else {
+          color = "#F44336"; // Vermelho
+          status = "Ruim";
+        }
       }
       
       // Configuração do gauge do Plotly
+      
       const data = [{
         type: "indicator",
         mode: "gauge+number",
-        value: value !== null && value !== undefined && !isNaN(value) ? value : 0,
+        value: displayValue,
         domain: { x: [0, 1], y: [0, 1] },
         title: { 
           text: "PM2.5<br><span style='font-size:0.7em;color:rgba(255,255,255,0.5)'>µg/m³</span>",
           font: { size: 14, color: "rgba(255,255,255,0.92)" }
         },
+        number: {
+          font: { size: 20, color: color }
+        },
         gauge: {
           axis: { 
-            range: [null, maxValue],
+            range: [0, maxValue],
             tickcolor: "rgba(255,255,255,0.5)",
             tickfont: { color: "rgba(255,255,255,0.7)", size: 10 },
             tickwidth: 1
           },
-          bar: { color: color },
+          bar: { 
+            color: color,
+            line: { color: color, width: 1 },
+            thickness: 0.2
+          },
           bgcolor: "rgba(0,0,0,0.1)",
           borderwidth: 2,
           bordercolor: "rgba(255,255,255,0.1)",
@@ -743,7 +754,7 @@
       const gaugeStatus = $("gaugeStatus");
       
       if (gaugeValue) {
-        if (value !== null && value !== undefined && !isNaN(value) && value > 0) {
+        if (value !== null && value !== undefined && !isNaN(value)) {
           gaugeValue.textContent = value.toFixed(1) + " µg/m³";
           gaugeValue.style.color = color;
         } else {
