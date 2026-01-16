@@ -660,8 +660,8 @@
       const centerX = canvas.width / 2;
       const centerY = canvas.height - 10;
       const radius = 80;
-      const startAngle = Math.PI; // 180 graus (esquerda)
-      const endAngle = 0; // 0 graus (direita)
+      const startAngle = Math.PI; // 180 graus (esquerda) - valor 0
+      const endAngle = 0; // 0 graus (direita) - valor máximo
       
       // Limpa o canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -696,28 +696,31 @@
       ctx.stroke();
       
       // Desenha os segmentos coloridos
-      const greenEnd = startAngle - ((greenMax / maxValue) * Math.PI);
-      const yellowEnd = startAngle - ((yellowMax / maxValue) * Math.PI);
+      // Calcula os ângulos de fim de cada segmento
+      // startAngle (180°) é onde começa (valor 0)
+      // endAngle (0°) é onde termina (valor máximo)
+      const greenEndAngle = startAngle - ((greenMax / maxValue) * Math.PI);
+      const yellowEndAngle = startAngle - ((yellowMax / maxValue) * Math.PI);
       
-      // Segmento verde
+      // Segmento verde (0 a 12.0)
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, startAngle, greenEnd, false);
+      ctx.arc(centerX, centerY, radius, startAngle, greenEndAngle, false);
       ctx.strokeStyle = "#4CAF50";
       ctx.lineWidth = 20;
       ctx.lineCap = "round";
       ctx.stroke();
       
-      // Segmento amarelo
+      // Segmento amarelo (12.1 a 35.4)
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, greenEnd, yellowEnd, false);
+      ctx.arc(centerX, centerY, radius, greenEndAngle, yellowEndAngle, false);
       ctx.strokeStyle = "#FFC107";
       ctx.lineWidth = 20;
       ctx.lineCap = "round";
       ctx.stroke();
       
-      // Segmento vermelho
+      // Segmento vermelho (35.5 a 50)
       ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, yellowEnd, endAngle, false);
+      ctx.arc(centerX, centerY, radius, yellowEndAngle, endAngle, false);
       ctx.strokeStyle = "#F44336";
       ctx.lineWidth = 20;
       ctx.lineCap = "round";
@@ -725,7 +728,15 @@
       
       // Desenha o ponteiro se houver valor
       if (value !== null && value !== undefined && !isNaN(value)) {
-        const normalizedValue = Math.min(value, maxValue) / maxValue;
+        // Normaliza o valor (0 a maxValue mapeia para 0 a 1)
+        const clampedValue = Math.min(Math.max(value, 0), maxValue);
+        const normalizedValue = clampedValue / maxValue;
+        
+        // Calcula o ângulo do ponteiro
+        // O arco vai de startAngle (180°, esquerda, valor 0) a endAngle (0°, direita, valor máximo)
+        // Quando value = 0, angle = Math.PI (180°, esquerda)
+        // Quando value = maxValue, angle = 0 (0°, direita)
+        // O ponteiro deve apontar para a posição correta no arco
         const angle = startAngle - (normalizedValue * Math.PI);
         
         ctx.save();
@@ -733,18 +744,36 @@
         ctx.rotate(angle);
         
         // Desenha o ponteiro
+        // O ponteiro aponta para cima (direção -Y) quando rotacionado
         ctx.beginPath();
         ctx.moveTo(0, 0);
         ctx.lineTo(0, -radius + 10);
         ctx.strokeStyle = color;
         ctx.lineWidth = 3;
+        ctx.lineCap = "round";
         ctx.stroke();
+        
+        // Adiciona uma pequena seta na ponta do ponteiro (apontando para fora)
+        ctx.beginPath();
+        ctx.moveTo(0, -radius + 10);
+        ctx.lineTo(-3, -radius + 16);
+        ctx.lineTo(3, -radius + 16);
+        ctx.closePath();
+        ctx.fillStyle = color;
+        ctx.fill();
         
         // Círculo no centro
         ctx.beginPath();
         ctx.arc(0, 0, 6, 0, Math.PI * 2);
         ctx.fillStyle = color;
         ctx.fill();
+        
+        // Borda do círculo
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, Math.PI * 2);
+        ctx.strokeStyle = "rgba(0,0,0,0.3)";
+        ctx.lineWidth = 1;
+        ctx.stroke();
         
         ctx.restore();
       }
