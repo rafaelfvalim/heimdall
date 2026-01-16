@@ -441,7 +441,7 @@
               <div class="kpis">
                 <div class="kpi" style="display: flex; flex-direction: column; align-items: center; min-width: 220px;">
                   <div class="label" style="margin-bottom: 8px;">Velocímetro PM2.5</div>
-                  <canvas id="gaugeChart" width="220" height="130" style="max-width: 100%; height: auto;"></canvas>
+                  <div id="gaugeChart" style="width: 220px; height: 200px;"></div>
                   <div id="gaugeValue" style="margin-top: 10px; font-size: 18px; font-weight: 600; color: var(--text);">—</div>
                   <div id="gaugeStatus" style="margin-top: 4px; font-size: 12px; color: var(--muted-2);">—</div>
                 </div>
@@ -581,6 +581,7 @@
   </div><!-- /wrap -->
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 
   <script>
     // Estado do filtro
@@ -651,31 +652,25 @@
 
     const ctx = $("chart");
 
-    // Função para desenhar o velocímetro
+    // Variável para armazenar o gauge do Plotly
+    let gaugeChart = null;
+
+    // Função para desenhar o velocímetro usando Plotly
     function drawGauge(value) {
-      const canvas = document.getElementById("gaugeChart");
-      if (!canvas) return;
-      
-      const ctx = canvas.getContext("2d");
-      const centerX = canvas.width / 2;
-      const centerY = canvas.height - 10;
-      const radius = 80;
-      const startAngle = Math.PI; // 180 graus (esquerda) - valor 0
-      const endAngle = 0; // 0 graus (direita) - valor máximo
-      
-      // Limpa o canvas
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const gaugeContainer = document.getElementById("gaugeChart");
+      if (!gaugeContainer) return;
       
       // Define os limites e cores
       const maxValue = 50; // Valor máximo para o gauge
       const greenMax = 12.0;
       const yellowMax = 35.4;
       
-      // Determina a cor baseada no valor
+      // Determina a cor e status baseada no valor
       let color, status;
       if (value === null || value === undefined || isNaN(value)) {
         color = "#666";
         status = "Sem dados";
+        value = 0; // Para exibir no gauge
       } else if (value <= greenMax) {
         color = "#4CAF50"; // Verde
         status = "Bom";
@@ -687,95 +682,60 @@
         status = "Ruim";
       }
       
-      // Desenha o arco de fundo (cinza)
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
-      ctx.strokeStyle = "rgba(255,255,255,0.1)";
-      ctx.lineWidth = 20;
-      ctx.lineCap = "round";
-      ctx.stroke();
+      // Configuração do gauge do Plotly
+      const data = [{
+        type: "indicator",
+        mode: "gauge+number",
+        value: value !== null && value !== undefined && !isNaN(value) ? value : 0,
+        domain: { x: [0, 1], y: [0, 1] },
+        title: { 
+          text: "PM2.5<br><span style='font-size:0.7em;color:rgba(255,255,255,0.5)'>µg/m³</span>",
+          font: { size: 14, color: "rgba(255,255,255,0.92)" }
+        },
+        gauge: {
+          axis: { 
+            range: [null, maxValue],
+            tickcolor: "rgba(255,255,255,0.5)",
+            tickfont: { color: "rgba(255,255,255,0.7)", size: 10 },
+            tickwidth: 1
+          },
+          bar: { color: color },
+          bgcolor: "rgba(0,0,0,0.1)",
+          borderwidth: 2,
+          bordercolor: "rgba(255,255,255,0.1)",
+          steps: [
+            { range: [0, greenMax], color: "#4CAF50" },
+            { range: [greenMax, yellowMax], color: "#FFC107" },
+            { range: [yellowMax, maxValue], color: "#F44336" }
+          ],
+          threshold: {
+            line: { color: "red", width: 4 },
+            thickness: 0.75,
+            value: maxValue
+          }
+        }
+      }];
       
-      // Desenha os segmentos coloridos
-      // Calcula os ângulos de fim de cada segmento
-      // startAngle (180°) é onde começa (valor 0)
-      // endAngle (0°) é onde termina (valor máximo)
-      const greenEndAngle = startAngle - ((greenMax / maxValue) * Math.PI);
-      const yellowEndAngle = startAngle - ((yellowMax / maxValue) * Math.PI);
+      const layout = {
+        width: 220,
+        height: 200,
+        margin: { t: 20, b: 20, l: 20, r: 20 },
+        paper_bgcolor: "transparent",
+        plot_bgcolor: "transparent",
+        font: { color: "rgba(255,255,255,0.92)", size: 12 }
+      };
       
-      // Segmento verde (0 a 12.0)
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, startAngle, greenEndAngle, false);
-      ctx.strokeStyle = "#4CAF50";
-      ctx.lineWidth = 20;
-      ctx.lineCap = "round";
-      ctx.stroke();
+      const config = {
+        displayModeBar: false,
+        responsive: true
+      };
       
-      // Segmento amarelo (12.1 a 35.4)
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, greenEndAngle, yellowEndAngle, false);
-      ctx.strokeStyle = "#FFC107";
-      ctx.lineWidth = 20;
-      ctx.lineCap = "round";
-      ctx.stroke();
-      
-      // Segmento vermelho (35.5 a 50)
-      ctx.beginPath();
-      ctx.arc(centerX, centerY, radius, yellowEndAngle, endAngle, false);
-      ctx.strokeStyle = "#F44336";
-      ctx.lineWidth = 20;
-      ctx.lineCap = "round";
-      ctx.stroke();
-      
-      // Desenha o ponteiro se houver valor
-      if (value !== null && value !== undefined && !isNaN(value)) {
-        // Normaliza o valor (0 a maxValue mapeia para 0 a 1)
-        const clampedValue = Math.min(Math.max(value, 0), maxValue);
-        const normalizedValue = clampedValue / maxValue;
-        
-        // Calcula o ângulo do ponteiro
-        // O arco vai de startAngle (180°, esquerda, valor 0) a endAngle (0°, direita, valor máximo)
-        // Quando value = 0, angle = Math.PI (180°, esquerda)
-        // Quando value = maxValue, angle = 0 (0°, direita)
-        // O ponteiro deve apontar para a posição correta no arco
-        const angle = startAngle - (normalizedValue * Math.PI);
-        
-        ctx.save();
-        ctx.translate(centerX, centerY);
-        ctx.rotate(angle);
-        
-        // Desenha o ponteiro
-        // O ponteiro aponta para cima (direção -Y) quando rotacionado
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.lineTo(0, -radius + 10);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 3;
-        ctx.lineCap = "round";
-        ctx.stroke();
-        
-        // Adiciona uma pequena seta na ponta do ponteiro (apontando para fora)
-        ctx.beginPath();
-        ctx.moveTo(0, -radius + 10);
-        ctx.lineTo(-3, -radius + 16);
-        ctx.lineTo(3, -radius + 16);
-        ctx.closePath();
-        ctx.fillStyle = color;
-        ctx.fill();
-        
-        // Círculo no centro
-        ctx.beginPath();
-        ctx.arc(0, 0, 6, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-        
-        // Borda do círculo
-        ctx.beginPath();
-        ctx.arc(0, 0, 6, 0, Math.PI * 2);
-        ctx.strokeStyle = "rgba(0,0,0,0.3)";
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        
-        ctx.restore();
+      // Atualiza ou cria o gráfico
+      if (gaugeChart) {
+        Plotly.update("gaugeChart", data, layout, config);
+      } else {
+        Plotly.newPlot("gaugeChart", data, layout, config);
+        gaugeChart = true;
       }
       
       // Atualiza o valor e status
@@ -783,7 +743,7 @@
       const gaugeStatus = $("gaugeStatus");
       
       if (gaugeValue) {
-        if (value !== null && value !== undefined && !isNaN(value)) {
+        if (value !== null && value !== undefined && !isNaN(value) && value > 0) {
           gaugeValue.textContent = value.toFixed(1) + " µg/m³";
           gaugeValue.style.color = color;
         } else {
