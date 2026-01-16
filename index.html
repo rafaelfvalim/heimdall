@@ -708,8 +708,8 @@
           },
           bar: { 
             color: color,
-            line: { color: color, width: 1 },
-            thickness: 0.2
+            line: { color: color, width: 2 },
+            thickness: 0.3
           },
           bgcolor: "rgba(0,0,0,0.1)",
           borderwidth: 2,
@@ -741,13 +741,9 @@
         responsive: true
       };
       
-      // Atualiza ou cria o gráfico
-      if (gaugeChart) {
-        Plotly.update("gaugeChart", data, layout, config);
-      } else {
-        Plotly.newPlot("gaugeChart", data, layout, config);
-        gaugeChart = true;
-      }
+      // Sempre recria o gráfico para garantir que o ponteiro apareça
+      Plotly.newPlot("gaugeChart", data, layout, config);
+      gaugeChart = true;
       
       // Atualiza o valor e status
       const gaugeValue = $("gaugeValue");
