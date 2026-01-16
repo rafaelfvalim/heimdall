@@ -466,8 +466,14 @@
                   <div class="label">Média (últimas 5)</div>
                   <div id="kpiAverage" class="value big">—</div>
                   <div class="sep" style="margin:12px 0;"></div>
+                  <div class="label">Estado do Relé</div>
+                  <div id="releStatus" class="value" style="display: flex; align-items: center; gap: 8px;">
+                    <span id="releIndicator" style="display: inline-block; width: 12px; height: 12px; border-radius: 50%; background-color: #666;"></span>
+                    <span id="releText">—</span>
+                  </div>
+                  <div class="sep" style="margin:12px 0;"></div>
                   <div class="label">Atualização</div>
-                  <div class="hint">Auto-refresh disponível no modo “últimos minutos”.</div>
+                  <div class="hint">Auto-refresh disponível no modo "últimos minutos".</div>
                 </div>
               </div>
             </div>
@@ -1023,9 +1029,71 @@
       tableBody.innerHTML = rows.join("");
     }
 
+    // Função para buscar o estado do relé
+    async function fetchReleStatus() {
+      const base = $("apiBase").value.replace(/\/+$/, "");
+      const apiKey = $("apiKey").value.trim();
+
+      if (!apiKey) {
+        return;
+      }
+
+      // Constrói a URL do relé
+      // A URL base é algo como: https://sites-automator.aal5pu.easypanel.host
+      // A URL do relé é: https://sites-api-rele.aal5pu.easypanel.host/rele
+      let releUrl;
+      try {
+        const urlObj = new URL(base);
+        // Substitui "automator" por "api-rele" no hostname
+        const hostname = urlObj.hostname.replace("automator", "api-rele");
+        releUrl = `${urlObj.protocol}//${hostname}/rele`;
+      } catch (e) {
+        // Fallback: substitui diretamente na string
+        releUrl = base.replace("automator", "api-rele").replace(/\/chart.*$/, "") + "/rele";
+      }
+      
+      releUrl += "?api_key=" + encodeURIComponent(apiKey);
+
+      try {
+        const res = await fetch(releUrl, { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const data = await res.json();
+        
+        if (data.ok) {
+          const releIndicator = $("releIndicator");
+          const releText = $("releText");
+          
+          // pm25_detected_increase indica o estado do acionamento
+          const isOn = data.pm25_detected_increase === true;
+          
+          if (releIndicator) {
+            releIndicator.style.backgroundColor = isOn ? "#4CAF50" : "#666";
+          }
+          
+          if (releText) {
+            releText.textContent = isOn ? "ON" : "OFF";
+            releText.style.color = isOn ? "#4CAF50" : "var(--muted-2)";
+          }
+        }
+      } catch (e) {
+        // Silenciosamente falha se não conseguir buscar o estado do relé
+        console.error("Erro ao buscar estado do relé:", e);
+        const releIndicator = $("releIndicator");
+        const releText = $("releText");
+        if (releIndicator) releIndicator.style.backgroundColor = "#666";
+        if (releText) {
+          releText.textContent = "—";
+          releText.style.color = "var(--muted-2)";
+        }
+      }
+    }
+
     async function reloadNow() {
       try {
         await fetchChart();
+        await fetchReleStatus(); // Busca o estado do relé junto com os dados do gráfico
       } catch (e) {
         let errorMsg = e.message || String(e);
         if (errorMsg.includes("CORS") || errorMsg.includes("blocked") ||
