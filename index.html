@@ -1790,6 +1790,11 @@
       
       // Ajusta largura das colunas
       const colWidths = headers.map((_, colIndex) => {
+        // Larguras fixas para Data e Hora
+        if (colIndex === 0) return { wch: 12 }; // Data
+        if (colIndex === 1) return { wch: 10 }; // Hora
+        
+        // Para outras colunas, calcula dinamicamente
         let maxLength = headers[colIndex].length;
         data.slice(1).forEach(row => {
           const cellValue = row[colIndex];
