@@ -462,6 +462,71 @@
       font-size: 11px;
       color: var(--muted-2);
     }
+
+    .disclaimer-accordion {
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,.03);
+    }
+
+    .disclaimer-header {
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s ease;
+    }
+
+    .disclaimer-header:hover {
+      background: rgba(255,255,255,.05);
+    }
+
+    .disclaimer-header strong {
+      font-size: 13px;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .disclaimer-icon {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      transition: transform 0.3s ease;
+    }
+
+    .disclaimer-accordion.active .disclaimer-icon {
+      transform: rotate(180deg);
+    }
+
+    .disclaimer-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+      padding: 0 18px;
+    }
+
+    .disclaimer-accordion.active .disclaimer-content {
+      max-height: 500px;
+      padding: 0 18px 18px 18px;
+    }
+
+    .disclaimer-text {
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .disclaimer-text p {
+      margin: 0 0 12px 0;
+    }
+
+    .disclaimer-text p:last-child {
+      margin-bottom: 0;
+    }
   </style>
 </head>
 
@@ -481,9 +546,6 @@
 
           <div class="right">
             <span class="badge" id="badgeLive"><span class="dot"></span> Status: <strong id="badgeStatus">—</strong></span>
-            <a href="disclaimer.html" style="text-decoration: none; color: inherit;">
-              <span class="badge" style="cursor: pointer;">Aviso Legal / Disclaimer</span>
-            </a>
           </div>
         </div>
       </div>
@@ -569,6 +631,32 @@
                 <div class="legend-tooltip-content">Alcançam os alvéolos e podem entrar na corrente sanguínea. Maior potencial inflamatório por unidade de massa.</div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Aviso Legal / Disclaimer Accordion -->
+      <div class="disclaimer-accordion" id="disclaimerAccordion">
+        <div class="disclaimer-header" id="disclaimerHeader">
+          <strong>
+            <span>⚠️</span>
+            <span>Aviso Legal / Disclaimer</span>
+          </strong>
+          <svg class="disclaimer-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div class="disclaimer-content">
+          <div class="disclaimer-text">
+            <p>
+              As medições apresentadas nesta página referem-se exclusivamente ao acompanhamento ambiental de material particulado em suspensão no ar (PM1.0, PM2.5 e PM10), coletadas por sensores eletrônicos instalados no interior do apartamento.
+            </p>
+            <p>
+              Os dados têm finalidade meramente informativa e de monitoramento, sendo utilizados para registrar ocorrências recorrentes de fumaça de cigarro que adentram o imóvel, com possível impacto ao bem-estar, à saúde e ao sossego dos moradores.
+            </p>
+            <p>
+              Este acompanhamento visa subsidiar registros e documentação relacionados a possíveis situações enquadráveis como perturbação do sossego, nos termos do art. 42 do Decreto-Lei nº 3.688/1941 (Lei das Contravenções Penais), sem prejuízo de outras normas aplicáveis.
+            </p>
           </div>
         </div>
       </div>
@@ -1600,6 +1688,16 @@
 
     // Event listener para o botão de buscar picos
     $("fetchPicos").addEventListener("click", () => fetchPicos());
+
+    // Accordion do Disclaimer
+    const disclaimerAccordion = document.getElementById("disclaimerAccordion");
+    const disclaimerHeader = document.getElementById("disclaimerHeader");
+    
+    if (disclaimerHeader) {
+      disclaimerHeader.addEventListener("click", () => {
+        disclaimerAccordion.classList.toggle("active");
+      });
+    }
 
     // Inicializa
     drawGauge(null); // Desenha o velocímetro inicialmente
