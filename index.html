@@ -1721,13 +1721,15 @@
       }
 
       let data = [];
+      let isHeader = true;
+      let timeColumnIndex = -1;
       
       // Processa cada linha
-      rows.forEach(row => {
+      rows.forEach((row, rowIndex) => {
         const cells = row.querySelectorAll("th, td");
         const rowData = [];
         
-        cells.forEach(cell => {
+        cells.forEach((cell, cellIndex) => {
           // Remove indicadores de ordenação e outros elementos HTML
           const cellText = cell.cloneNode(true);
           const indicators = cellText.querySelectorAll(".sort-indicator");
@@ -1737,20 +1739,64 @@
           // Remove quebras de linha e espaços extras
           text = text.replace(/\s+/g, " ");
           
-          // Tenta converter para número se possível
-          const numValue = parseFloat(text);
-          if (!isNaN(numValue) && text !== "" && !text.includes("—")) {
-            rowData.push(numValue);
+          // Detecta coluna de horário no cabeçalho
+          if (isHeader && rowIndex === 0) {
+            if (text.toLowerCase().includes("horário") || text.toLowerCase().includes("time")) {
+              timeColumnIndex = cellIndex;
+            }
+          }
+          
+          // Se for coluna de horário e não for cabeçalho, tenta converter para data
+          if (!isHeader && cellIndex === timeColumnIndex && text && !text.includes("—")) {
+            // Remove "BRT" e espaços extras
+            let timeStr = text.replace(/BRT/gi, "").trim();
+            // Tenta parsear como data/hora (formato HH:MM:SS ou HH:MM)
+            const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+            if (timeMatch) {
+              // Cria uma data com o horário de hoje (Excel precisa de uma data completa)
+              const today = new Date();
+              const hours = parseInt(timeMatch[1]);
+              const minutes = parseInt(timeMatch[2]);
+              const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
+              today.setHours(hours, minutes, seconds, 0);
+              // Converte para formato Excel (número de dias desde 1900-01-01)
+              const excelDate = XLSX.SSF.parse_date_code((today - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24));
+              rowData.push(today);
+            } else {
+              rowData.push(text);
+            }
           } else {
-            rowData.push(text);
+            // Tenta converter para número se possível
+            const numValue = parseFloat(text);
+            if (!isNaN(numValue) && text !== "" && !text.includes("—") && !text.includes("µg")) {
+              rowData.push(numValue);
+            } else {
+              rowData.push(text);
+            }
           }
         });
         
         data.push(rowData);
+        isHeader = false;
       });
 
       // Cria a planilha
       const ws = XLSX.utils.aoa_to_sheet(data);
+      
+      // Formata coluna de horário como data/hora
+      if (timeColumnIndex >= 0) {
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let row = 1; row <= range.e.r; row++) {
+          const cellAddress = XLSX.utils.encode_cell({ r: row, c: timeColumnIndex });
+          if (ws[cellAddress] && ws[cellAddress].v instanceof Date) {
+            // Define formato de data/hora para Excel
+            if (!ws[cellAddress].z) {
+              ws[cellAddress].z = "dd/mm/yyyy hh:mm:ss";
+            }
+            ws[cellAddress].t = 'd'; // Tipo data
+          }
+        }
+      }
       
       // Ajusta a largura das colunas
       const colWidths = [];
