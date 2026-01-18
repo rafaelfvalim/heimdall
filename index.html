@@ -1752,13 +1752,17 @@
       const data = [headers];
       sortedData.forEach(item => {
         const dateObj = new Date(item.timeIso);
-        // Separa data e hora
-        const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-        const timeOnly = new Date(1899, 11, 30, dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds());
         
-        // Converte para número serial do Excel
-        const excelDate = (dateOnly - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
-        const excelTime = (timeOnly - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+        // Separa data e hora corretamente
+        // Data: apenas a parte da data (sem hora)
+        const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+        const excelDate = (dateOnly.getTime() - new Date(1899, 11, 30).getTime()) / (1000 * 60 * 60 * 24);
+        
+        // Hora: apenas a parte do tempo como fração de um dia
+        const hours = dateObj.getHours();
+        const minutes = dateObj.getMinutes();
+        const seconds = dateObj.getSeconds();
+        const excelTime = (hours * 3600 + minutes * 60 + seconds) / 86400; // Fração de um dia
         
         const row = [excelDate, excelTime];
         if (showPm1) row.push(item.pm1 !== null ? item.pm1 : "");
@@ -1830,13 +1834,17 @@
       const data = [headers];
       picosData.forEach(occ => {
         const dateObj = new Date(occ.timestamp);
-        // Separa data e hora
-        const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
-        const timeOnly = new Date(1899, 11, 30, dateObj.getHours(), dateObj.getMinutes(), dateObj.getSeconds());
         
-        // Converte para número serial do Excel
-        const excelDate = (dateOnly - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
-        const excelTime = (timeOnly - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+        // Separa data e hora corretamente
+        // Data: apenas a parte da data (sem hora)
+        const dateOnly = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate());
+        const excelDate = (dateOnly.getTime() - new Date(1899, 11, 30).getTime()) / (1000 * 60 * 60 * 24);
+        
+        // Hora: apenas a parte do tempo como fração de um dia
+        const hours = dateObj.getHours();
+        const minutes = dateObj.getMinutes();
+        const seconds = dateObj.getSeconds();
+        const excelTime = (hours * 3600 + minutes * 60 + seconds) / 86400; // Fração de um dia
         
         const row = [
           excelDate,
