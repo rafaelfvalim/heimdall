@@ -1761,13 +1761,17 @@
       // Cria a planilha
       const ws = XLSX.utils.aoa_to_sheet(data);
       
-      // Formata coluna de horário como data/hora
+      // Formata coluna de data/hora
       const range = XLSX.utils.decode_range(ws['!ref']);
+      const dateFormat = "dd/mm/yyyy hh:mm:ss";
       for (let row = 1; row <= range.e.r; row++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
         if (ws[cellAddress] && ws[cellAddress].v instanceof Date) {
-          ws[cellAddress].z = "dd/mm/yyyy hh:mm:ss";
+          ws[cellAddress].z = dateFormat;
           ws[cellAddress].t = 'd';
+          // Força a formatação como número serial do Excel
+          const excelDate = (ws[cellAddress].v - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+          ws[cellAddress].v = excelDate;
         }
       }
       
