@@ -555,30 +555,6 @@
                 <div class="hint">Dica: use "últimos minutos" para auto-refresh.</div>
               </div>
             </div>
-            
-            <div class="table-container" style="margin-top: 20px;">
-              <table id="dataTable" class="data-table">
-                <thead>
-                  <tr>
-                    <th class="sortable" data-sort="time">
-                      Horário <span class="sort-indicator"></span>
-                    </th>
-                    <th id="colPm1" class="sortable" data-sort="pm1" style="display: none;">
-                      PM1.0 (µg/m³) <span class="sort-indicator"></span>
-                    </th>
-                    <th id="colPm25" class="sortable" data-sort="pm25">
-                      PM2.5 (µg/m³) <span class="sort-indicator"></span>
-                    </th>
-                    <th id="colPm10" class="sortable" data-sort="pm10" style="display: none;">
-                      PM10 (µg/m³) <span class="sort-indicator"></span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody id="tableBody">
-                  <tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Carregando dados...</td></tr>
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
 
@@ -637,6 +613,40 @@
                   </tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leitura Integral dos Dados -->
+        <div class="card" style="margin-top:14px;">
+          <div class="card-h">
+            <strong>Leitura Integral dos Dados</strong>
+            <span class="muted">Tabela completa de leituras</span>
+          </div>
+
+          <div class="card-b">
+            <div class="table-container">
+              <table id="dataTable" class="data-table">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="time">
+                      Horário <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colPm1" class="sortable" data-sort="pm1" style="display: none;">
+                      PM1.0 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colPm25" class="sortable" data-sort="pm25">
+                      PM2.5 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colPm10" class="sortable" data-sort="pm10" style="display: none;">
+                      PM10 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Carregando dados...</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
