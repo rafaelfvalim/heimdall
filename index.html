@@ -1395,6 +1395,50 @@
       }
     }
 
+    // Função para obter a data/hora atual no fuso de São Paulo no formato datetime-local
+    function getTodayInSaoPaulo() {
+      const now = new Date();
+      
+      // Obtém a data/hora atual em São Paulo
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false
+      });
+      
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === "year").value;
+      const month = parts.find(p => p.type === "month").value;
+      const day = parts.find(p => p.type === "day").value;
+      const hour = parts.find(p => p.type === "hour").value;
+      const minute = parts.find(p => p.type === "minute").value;
+      
+      return {
+        date: `${year}-${month}-${day}`,
+        start: `${year}-${month}-${day}T00:00`,
+        end: `${year}-${month}-${day}T23:59`
+      };
+    }
+
+    // Função para inicializar os campos de data/hora dos picos com o dia atual
+    function initPicosDateRange() {
+      const today = getTodayInSaoPaulo();
+      const startInput = $("picosStartDt");
+      const endInput = $("picosEndDt");
+      
+      if (startInput && endInput) {
+        startInput.value = today.start;
+        endInput.value = today.end;
+        
+        // Carrega automaticamente os dados do dia atual
+        fetchPicos();
+      }
+    }
+
     // Event listener para o botão de buscar picos
     $("fetchPicos").addEventListener("click", () => fetchPicos());
 
@@ -1402,6 +1446,7 @@
     drawGauge(null); // Desenha o velocímetro inicialmente
     resetTimerIfNeeded();
     reloadNow();
+    initPicosDateRange(); // Inicializa os campos de picos com o dia atual
   </script>
 </body>
 </html>
