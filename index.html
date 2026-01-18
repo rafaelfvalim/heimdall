@@ -904,6 +904,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
     // Estado do filtro
@@ -1699,7 +1700,7 @@
     // Event listener para o botão de buscar picos
     $("fetchPicos").addEventListener("click", () => fetchPicos());
 
-    // Função para exportar tabela para Excel (CSV)
+    // Função para exportar tabela para Excel (XLSX)
     function exportTableToExcel(tableId, filename) {
       const table = document.getElementById(tableId);
       if (!table) {
@@ -1713,7 +1714,13 @@
         return;
       }
 
-      let csv = [];
+      // Verifica se a biblioteca XLSX está disponível
+      if (typeof XLSX === "undefined") {
+        alert("Biblioteca XLSX não carregada. Por favor, recarregue a página.");
+        return;
+      }
+
+      let data = [];
       
       // Processa cada linha
       rows.forEach(row => {
@@ -1729,34 +1736,41 @@
           let text = cellText.textContent.trim();
           // Remove quebras de linha e espaços extras
           text = text.replace(/\s+/g, " ");
-          // Escapa aspas duplas
-          text = text.replace(/"/g, '""');
-          // Adiciona aspas se contém vírgula, quebra de linha ou aspas
-          if (text.includes(",") || text.includes("\n") || text.includes('"')) {
-            text = `"${text}"`;
+          
+          // Tenta converter para número se possível
+          const numValue = parseFloat(text);
+          if (!isNaN(numValue) && text !== "" && !text.includes("—")) {
+            rowData.push(numValue);
+          } else {
+            rowData.push(text);
           }
-          rowData.push(text);
         });
         
-        csv.push(rowData.join(","));
+        data.push(rowData);
       });
 
-      // Cria o conteúdo CSV
-      const csvContent = csv.join("\n");
+      // Cria a planilha
+      const ws = XLSX.utils.aoa_to_sheet(data);
       
-      // Adiciona BOM para UTF-8 (para Excel reconhecer acentos corretamente)
-      const BOM = "\uFEFF";
-      const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
-      
-      // Cria link de download
-      const link = document.createElement("a");
-      const url = URL.createObjectURL(blob);
-      link.setAttribute("href", url);
-      link.setAttribute("download", filename);
-      link.style.visibility = "hidden";
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      // Ajusta a largura das colunas
+      const colWidths = [];
+      data[0].forEach((_, colIndex) => {
+        let maxLength = 0;
+        data.forEach(row => {
+          const cellValue = row[colIndex];
+          const length = cellValue ? String(cellValue).length : 0;
+          if (length > maxLength) maxLength = length;
+        });
+        colWidths.push({ wch: Math.max(maxLength + 2, 10) });
+      });
+      ws['!cols'] = colWidths;
+
+      // Cria o workbook
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Dados");
+
+      // Gera o arquivo XLSX
+      XLSX.writeFile(wb, filename);
     }
 
     // Event listeners para exportação
@@ -1765,7 +1779,7 @@
       exportPicosBtn.addEventListener("click", () => {
         const startDate = $("picosStartDt").value || "inicio";
         const endDate = $("picosEndDt").value || "fim";
-        const filename = `picos_pm25_${startDate}_${endDate}.csv`.replace(/:/g, "-");
+        const filename = `picos_pm25_${startDate}_${endDate}.xlsx`.replace(/:/g, "-");
         exportTableToExcel("picosTable", filename);
       });
     }
@@ -1775,7 +1789,7 @@
       exportDataBtn.addEventListener("click", () => {
         const now = new Date();
         const dateStr = now.toISOString().split("T")[0];
-        const filename = `leituras_integrais_${dateStr}.csv`;
+        const filename = `leituras_integrais_${dateStr}.xlsx`;
         exportTableToExcel("dataTable", filename);
       });
     }
