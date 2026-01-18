@@ -402,6 +402,66 @@
       align-items:center;
       flex-wrap: wrap;
     }
+
+    .legend-item {
+      position: relative;
+      display: inline-block;
+      padding: 8px 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      cursor: help;
+      transition: all 0.2s ease;
+    }
+
+    .legend-item:hover {
+      background: rgba(255,255,255,.08);
+      border-color: var(--accent2);
+    }
+
+    .legend-tooltip {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      margin-top: 8px;
+      width: 320px;
+      padding: 14px;
+      background: rgba(11, 16, 32, 0.98);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      box-shadow: 0 10px 26px rgba(0,0,0,.4);
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+      font-size: 11px;
+      line-height: 1.5;
+    }
+
+    .legend-item:hover .legend-tooltip {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .legend-tooltip-section {
+      margin-bottom: 10px;
+    }
+
+    .legend-tooltip-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .legend-tooltip-label {
+      font-size: 11px;
+      color: var(--muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    .legend-tooltip-content {
+      font-size: 11px;
+      color: var(--muted-2);
+    }
   </style>
 </head>
 
@@ -425,78 +485,85 @@
       </div>
 
       <!-- Legenda dos Tipos de Leitura -->
-      <div style="padding: 18px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.03);">
-        <div style="margin-bottom: 16px;">
-          <strong style="font-size: 13px; color: var(--text); letter-spacing: 0.2px;">Tipos de Partículas Monitoradas</strong>
-        </div>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+      <div style="padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.03);">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <strong style="font-size: 12px; color: var(--muted);">Legenda:</strong>
+          
           <!-- PM10 -->
-          <div style="padding: 14px; background: rgba(255,255,255,.04); border-radius: var(--radius-sm); border: 1px solid var(--border);">
-            <div style="margin-bottom: 10px;">
-              <strong style="font-size: 13px; color: var(--text);">PM10 — partículas grossas (≤ 10 µm)</strong>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>O que são:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Partículas maiores, visíveis como poeira, associadas a processos mecânicos e naturais.</div>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Exemplos comuns:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Poeira de construção, pólen, esporos de fungos, partículas de solo levantadas pelo vento.</div>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Origem típica:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Construção, tráfego em estradas de terra, atividades agrícolas, erupções vulcânicas.</div>
-            </div>
-            <div>
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Impacto:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Depositam-se principalmente no nariz e garganta. Irritam vias aéreas superiores.</div>
+          <div class="legend-item">
+            <strong style="font-size: 12px; color: var(--text);">PM10 (≤ 10 µm)</strong>
+            <div class="legend-tooltip">
+              <div style="margin-bottom: 10px;">
+                <strong style="font-size: 12px; color: var(--text);">PM10 — partículas grossas (≤ 10 µm)</strong>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">O que são:</div>
+                <div class="legend-tooltip-content">Partículas maiores, visíveis como poeira, associadas a processos mecânicos e naturais.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Exemplos comuns:</div>
+                <div class="legend-tooltip-content">Poeira de construção, pólen, esporos de fungos, partículas de solo levantadas pelo vento.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Origem típica:</div>
+                <div class="legend-tooltip-content">Construção, tráfego em estradas de terra, atividades agrícolas, erupções vulcânicas.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Impacto:</div>
+                <div class="legend-tooltip-content">Depositam-se principalmente no nariz e garganta. Irritam vias aéreas superiores.</div>
+              </div>
             </div>
           </div>
 
           <!-- PM2.5 -->
-          <div style="padding: 14px; background: rgba(255,255,255,.04); border-radius: var(--radius-sm); border: 1px solid var(--border);">
-            <div style="margin-bottom: 10px;">
-              <strong style="font-size: 13px; color: var(--text);">PM2.5 — partículas finas (≤ 2,5 µm)</strong>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>O que são:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Partículas muito menores, invisíveis a olho nu, associadas a processos de combustão.</div>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Exemplos comuns:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Fumaça de cigarros, fuligem (black carbon), aerossóis de combustão (lenha, carvão, óleo, diesel), sulfatos, nitratos e amônio, partículas secundárias formadas na atmosfera.</div>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Origem típica:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Veículos (especialmente diesel), queima de biomassa, incêndios, indústrias, fumo ativo e passivo.</div>
-            </div>
-            <div>
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Impacto:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Penetram profundamente nos pulmões (alvéolos). Associadas a doenças respiratórias e cardiovasculares.</div>
+          <div class="legend-item">
+            <strong style="font-size: 12px; color: var(--text);">PM2.5 (≤ 2,5 µm)</strong>
+            <div class="legend-tooltip">
+              <div style="margin-bottom: 10px;">
+                <strong style="font-size: 12px; color: var(--text);">PM2.5 — partículas finas (≤ 2,5 µm)</strong>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">O que são:</div>
+                <div class="legend-tooltip-content">Partículas muito menores, invisíveis a olho nu, associadas a processos de combustão.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Exemplos comuns:</div>
+                <div class="legend-tooltip-content">Fumaça de cigarros, fuligem (black carbon), aerossóis de combustão (lenha, carvão, óleo, diesel), sulfatos, nitratos e amônio, partículas secundárias formadas na atmosfera.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Origem típica:</div>
+                <div class="legend-tooltip-content">Veículos (especialmente diesel), queima de biomassa, incêndios, indústrias, fumo ativo e passivo.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Impacto:</div>
+                <div class="legend-tooltip-content">Penetram profundamente nos pulmões (alvéolos). Associadas a doenças respiratórias e cardiovasculares.</div>
+              </div>
             </div>
           </div>
 
           <!-- PM1.0 -->
-          <div style="padding: 14px; background: rgba(255,255,255,.04); border-radius: var(--radius-sm); border: 1px solid var(--border);">
-            <div style="margin-bottom: 10px;">
-              <strong style="font-size: 13px; color: var(--text);">PM1.0 — partículas ultrafinas (≤ 1,0 µm)</strong>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>O que são:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Frações ainda mais finas do PM2.5, com maior capacidade de penetração sistêmica.</div>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Exemplos comuns:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Partículas ultrafinas de combustão, aerossóis orgânicos voláteis condensados, metais pesados em suspensão, fumaça fresca de cigarro, emissões recentes de motores.</div>
-            </div>
-            <div style="margin-bottom: 8px;">
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Origem típica:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Combustão recente (cigarros, escapamentos), processos industriais de alta temperatura.</div>
-            </div>
-            <div>
-              <div style="font-size: 11px; color: var(--muted); margin-bottom: 4px;"><strong>Impacto:</strong></div>
-              <div style="font-size: 11px; color: var(--muted-2); line-height: 1.5;">Alcançam os alvéolos e podem entrar na corrente sanguínea. Maior potencial inflamatório por unidade de massa.</div>
+          <div class="legend-item">
+            <strong style="font-size: 12px; color: var(--text);">PM1.0 (≤ 1,0 µm)</strong>
+            <div class="legend-tooltip">
+              <div style="margin-bottom: 10px;">
+                <strong style="font-size: 12px; color: var(--text);">PM1.0 — partículas ultrafinas (≤ 1,0 µm)</strong>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">O que são:</div>
+                <div class="legend-tooltip-content">Frações ainda mais finas do PM2.5, com maior capacidade de penetração sistêmica.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Exemplos comuns:</div>
+                <div class="legend-tooltip-content">Partículas ultrafinas de combustão, aerossóis orgânicos voláteis condensados, metais pesados em suspensão, fumaça fresca de cigarro, emissões recentes de motores.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Origem típica:</div>
+                <div class="legend-tooltip-content">Combustão recente (cigarros, escapamentos), processos industriais de alta temperatura.</div>
+              </div>
+              <div class="legend-tooltip-section">
+                <div class="legend-tooltip-label">Impacto:</div>
+                <div class="legend-tooltip-content">Alcançam os alvéolos e podem entrar na corrente sanguínea. Maior potencial inflamatório por unidade de massa.</div>
+              </div>
             </div>
           </div>
         </div>
