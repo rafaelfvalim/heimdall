@@ -716,6 +716,120 @@
             </div>
           </div>
 
+          <!-- Níveis de Qualidade do Ar -->
+          <div class="card" style="margin-top:14px;">
+            <div class="card-h">
+              <strong>Níveis de Qualidade do Ar</strong>
+              <span class="muted">Classificação PM2.5</span>
+            </div>
+
+            <div class="card-b">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+                <!-- Boa -->
+                <div style="padding: 14px; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: var(--radius-sm);">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 16px;">🟢</span>
+                    <strong style="font-size: 13px; color: #4CAF50;">Boa</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+                    <strong>PM2.5:</strong> 0 – 12 µg/m³
+                  </div>
+                  <div style="font-size: 11px; color: var(--muted-2); line-height: 1.6;">
+                    <strong>Implicações na saúde:</strong><br>
+                    • Qualidade do ar satisfatória<br>
+                    • Sem riscos conhecidos à saúde<br>
+                    • Ideal para todas as pessoas, inclusive crianças, idosos e pessoas com doenças respiratórias
+                  </div>
+                </div>
+
+                <!-- Moderada -->
+                <div style="padding: 14px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: var(--radius-sm);">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 16px;">🟡</span>
+                    <strong style="font-size: 13px; color: #FFC107;">Moderada</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+                    <strong>PM2.5:</strong> 12.1 – 35.4 µg/m³
+                  </div>
+                  <div style="font-size: 11px; color: var(--muted-2); line-height: 1.6;">
+                    <strong>Implicações na saúde:</strong><br>
+                    • Pode causar leve desconforto em pessoas muito sensíveis<br>
+                    • Possível irritação leve nos olhos, nariz ou garganta<br>
+                    • Geralmente segura para a população em geral
+                  </div>
+                </div>
+
+                <!-- Ruim para Grupos Sensíveis -->
+                <div style="padding: 14px; background: rgba(255, 152, 0, 0.1); border: 1px solid rgba(255, 152, 0, 0.3); border-radius: var(--radius-sm);">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 16px;">🟠</span>
+                    <strong style="font-size: 13px; color: #FF9800;">Ruim para Grupos Sensíveis</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+                    <strong>PM2.5:</strong> 35.5 – 55.4 µg/m³
+                  </div>
+                  <div style="font-size: 11px; color: var(--muted-2); line-height: 1.6;">
+                    <strong>Implicações na saúde:</strong><br>
+                    • Crianças, idosos, asmáticos e pessoas com problemas cardíacos podem apresentar sintomas<br>
+                    • Tosse, falta de ar, irritação respiratória<br>
+                    • Recomenda-se reduzir atividades prolongadas em ambientes contaminados
+                  </div>
+                </div>
+
+                <!-- Ruim -->
+                <div style="padding: 14px; background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: var(--radius-sm);">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 16px;">🔴</span>
+                    <strong style="font-size: 13px; color: #F44336;">Ruim</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+                    <strong>PM2.5:</strong> 55.5 – 150.4 µg/m³
+                  </div>
+                  <div style="font-size: 11px; color: var(--muted-2); line-height: 1.6;">
+                    <strong>Implicações na saúde:</strong><br>
+                    • A população em geral pode sentir efeitos adversos<br>
+                    • Aumento de crises de asma, bronquite e irritação pulmonar<br>
+                    • Exposição prolongada é prejudicial à saúde
+                  </div>
+                </div>
+
+                <!-- Muito Ruim -->
+                <div style="padding: 14px; background: rgba(156, 39, 176, 0.1); border: 1px solid rgba(156, 39, 176, 0.3); border-radius: var(--radius-sm);">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 16px;">🟣</span>
+                    <strong style="font-size: 13px; color: #9C27B0;">Muito Ruim</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+                    <strong>PM2.5:</strong> 150.5 – 250.4 µg/m³
+                  </div>
+                  <div style="font-size: 11px; color: var(--muted-2); line-height: 1.6;">
+                    <strong>Implicações na saúde:</strong><br>
+                    • Risco elevado para todos<br>
+                    • Sintomas intensos: dificuldade respiratória, ardor no peito, fadiga<br>
+                    • Recomenda-se evitar exposição e manter ambientes fechados
+                  </div>
+                </div>
+
+                <!-- Perigosa -->
+                <div style="padding: 14px; background: rgba(33, 33, 33, 0.3); border: 1px solid rgba(255, 255, 255, 0.2); border-radius: var(--radius-sm);">
+                  <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                    <span style="font-size: 16px;">⚫</span>
+                    <strong style="font-size: 13px; color: #FF5252;">Perigosa</strong>
+                  </div>
+                  <div style="font-size: 12px; color: var(--muted); margin-bottom: 8px;">
+                    <strong>PM2.5:</strong> ≥ 250.5 µg/m³
+                  </div>
+                  <div style="font-size: 11px; color: var(--muted-2); line-height: 1.6;">
+                    <strong>Implicações na saúde:</strong><br>
+                    • Emergência de saúde pública<br>
+                    • Riscos graves mesmo para exposições curtas<br>
+                    • Pode agravar significativamente doenças respiratórias e cardíacas
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Controls -->
           <div class="card">
             <div class="card-h">
