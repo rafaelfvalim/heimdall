@@ -1278,6 +1278,21 @@
       });
     }
 
+    // Função auxiliar para determinar a cor baseada no valor de PM2.5
+    function getPm25Color(value) {
+      if (value === null || value === undefined || isNaN(value)) {
+        return "var(--text)"; // Cor padrão para valores inválidos
+      }
+      const numValue = Number(value);
+      if (numValue <= 12.0) {
+        return "#4CAF50"; // Verde (Bom)
+      } else if (numValue <= 35.4) {
+        return "#FFC107"; // Amarelo (Moderado)
+      } else {
+        return "#F44336"; // Vermelho (Ruim)
+      }
+    }
+
     // Função para buscar picos de leituras
     async function fetchPicos() {
       const base = $("apiBase").value.replace(/\/+$/, "");
@@ -1341,15 +1356,21 @@
         } else {
           tableBody.innerHTML = occurrences.map(occ => {
             const time = fmtTime(occ.timestamp);
-            const previous = occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value).toFixed(1) : "—";
-            const current = occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value).toFixed(1) : "—";
+            const previousValue = occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : null;
+            const currentValue = occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value) : null;
+            const previous = previousValue !== null ? previousValue.toFixed(1) : "—";
+            const current = currentValue !== null ? currentValue.toFixed(1) : "—";
             const increase = occ.increase !== null && occ.increase !== undefined ? Number(occ.increase).toFixed(1) : "—";
+            
+            // Determina cores baseadas nos valores
+            const previousColor = getPm25Color(previousValue);
+            const currentColor = getPm25Color(currentValue);
             
             return `
               <tr>
                 <td>${time}</td>
-                <td>${previous}</td>
-                <td>${current}</td>
+                <td style="color: ${previousColor}; font-weight: 600;">${previous}</td>
+                <td style="color: ${currentColor}; font-weight: 600;">${current}</td>
                 <td style="color: ${Number(occ.increase) > 50 ? '#F44336' : Number(occ.increase) > 20 ? '#FFC107' : '#4CAF50'}; font-weight: 600;">${increase}</td>
               </tr>
             `;
