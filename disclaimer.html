@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aviso Legal / Disclaimer - Hemdall Monitor</title>
+
+  <style>
+    :root{
+      --bg: #0b1020;
+      --surface: rgba(255,255,255,.06);
+      --surface-2: rgba(255,255,255,.08);
+      --border: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --muted-2: rgba(255,255,255,.55);
+      --shadow: 0 18px 40px rgba(0,0,0,.35);
+      --radius: 18px;
+      --radius-sm: 14px;
+      --focus: 0 0 0 3px rgba(130, 160, 255, .35);
+      --accent1: #7f00ff;
+      --accent2: #00d4ff;
+      --ok: #27c29b;
+      --warn: #f1b54a;
+      --bad: #ff5b6e;
+      color-scheme: dark;
+    }
+
+    *{ box-sizing: border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(900px 600px at 15% 10%, rgba(127,0,255,.28), transparent 60%),
+        radial-gradient(900px 600px at 85% 0%, rgba(0,212,255,.18), transparent 55%),
+        radial-gradient(900px 700px at 50% 95%, rgba(255,91,110,.10), transparent 60%),
+        var(--bg);
+      color: var(--text);
+      padding: 28px 16px 60px;
+    }
+
+    .wrap{
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .shell{
+      border: 1px solid var(--border);
+      border-radius: calc(var(--radius) + 6px);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .topbar{
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(90deg, rgba(127,0,255,.20), rgba(0,212,255,.12));
+    }
+
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing: .2px;
+      line-height: 1.2;
+    }
+
+    .content{
+      padding: 28px;
+    }
+
+    .content h2{
+      font-size: 16px;
+      margin: 0 0 16px 0;
+      color: var(--text);
+    }
+
+    .content p{
+      font-size: 14px;
+      line-height: 1.7;
+      color: var(--muted);
+      margin: 0 0 16px 0;
+    }
+
+    .content p:last-child{
+      margin-bottom: 0;
+    }
+
+    .back-link{
+      display: inline-block;
+      margin-bottom: 20px;
+      padding: 8px 14px;
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    .back-link:hover{
+      background: rgba(255,255,255,.08);
+      border-color: var(--accent2);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="shell">
+      <div class="topbar">
+        <div class="title">
+          <h1>Aviso Legal / Disclaimer</h1>
+        </div>
+      </div>
+
+      <div class="content">
+        <a href="index.html" class="back-link">← Voltar ao Dashboard</a>
+
+        <h2>Aviso Legal / Disclaimer</h2>
+
+        <p>
+          As medições apresentadas nesta página referem-se exclusivamente ao acompanhamento ambiental de material particulado em suspensão no ar (PM1.0, PM2.5 e PM10), coletadas por sensores eletrônicos instalados no interior do apartamento.
+        </p>
+
+        <p>
+          Os dados têm finalidade meramente informativa e de monitoramento, sendo utilizados para registrar ocorrências recorrentes de fumaça de cigarro que adentram o imóvel, com possível impacto ao bem-estar, à saúde e ao sossego dos moradores.
+        </p>
+
+        <p>
+          Este acompanhamento visa subsidiar registros e documentação relacionados a possíveis situações enquadráveis como perturbação do sossego, nos termos do art. 42 do Decreto-Lei nº 3.688/1941 (Lei das Contravenções Penais), sem prejuízo de outras normas aplicáveis.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
