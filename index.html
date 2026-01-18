@@ -836,6 +836,9 @@
                 <table id="picosTable" class="data-table">
                   <thead>
                     <tr>
+                      <th class="sortable" data-sort="date">
+                        Data <span class="sort-indicator"></span>
+                      </th>
                       <th class="sortable" data-sort="time">
                         Horário <span class="sort-indicator"></span>
                       </th>
@@ -851,7 +854,7 @@
                     </tr>
                   </thead>
                   <tbody id="picosTableBody">
-                    <tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Selecione um range de data/hora e clique em "Buscar Picos"</td></tr>
+                    <tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Selecione um range de data/hora e clique em "Buscar Picos"</td></tr>
                   </tbody>
                 </table>
               </div>
@@ -1613,12 +1616,29 @@
         // Armazena dados originais para exportação
         picosData = occurrences;
 
+        // Função auxiliar para formatar apenas a data
+        function fmtDate(isoZ) {
+          try {
+            const date = new Date(isoZ);
+            const formatter = new Intl.DateTimeFormat("pt-BR", {
+              timeZone: "America/Sao_Paulo",
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit"
+            });
+            return formatter.format(date);
+          } catch {
+            return isoZ;
+          }
+        }
+
         // Atualiza a tabela
         if (occurrences.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum pico encontrado no período selecionado</td></tr>';
+          tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum pico encontrado no período selecionado</td></tr>';
           picosData = [];
         } else {
           tableBody.innerHTML = occurrences.map(occ => {
+            const date = fmtDate(occ.timestamp);
             const time = fmtTime(occ.timestamp);
             const previousValue = occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : null;
             const currentValue = occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value) : null;
@@ -1632,6 +1652,7 @@
             
             return `
               <tr>
+                <td>${date}</td>
                 <td>${time}</td>
                 <td style="color: ${previousColor}; font-weight: 600;">${previous}</td>
                 <td style="color: ${currentColor}; font-weight: 600;">${current}</td>
