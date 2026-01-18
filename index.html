@@ -1723,7 +1723,7 @@
       const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
 
       // Cria cabeçalhos
-      const headers = ["Horário"];
+      const headers = ["Data e Hora"];
       if (showPm1) headers.push("PM1.0 (µg/m³)");
       headers.push("PM2.5 (µg/m³)");
       if (showPm10) headers.push("PM10 (µg/m³)");
@@ -1802,7 +1802,7 @@
       }
 
       // Cria cabeçalhos
-      const headers = ["Horário", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
+      const headers = ["Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
 
       // Cria dados da planilha usando timestamps originais
       const data = [headers];
@@ -1819,19 +1819,23 @@
       // Cria a planilha
       const ws = XLSX.utils.aoa_to_sheet(data);
       
-      // Formata coluna de horário como data/hora
+      // Formata coluna de data/hora
       const range = XLSX.utils.decode_range(ws['!ref']);
+      const dateFormat = "dd/mm/yyyy hh:mm:ss";
       for (let row = 1; row <= range.e.r; row++) {
         const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
         if (ws[cellAddress] && ws[cellAddress].v instanceof Date) {
-          ws[cellAddress].z = "dd/mm/yyyy hh:mm:ss";
+          ws[cellAddress].z = dateFormat;
           ws[cellAddress].t = 'd';
+          // Força a formatação como número serial do Excel
+          const excelDate = (ws[cellAddress].v - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24);
+          ws[cellAddress].v = excelDate;
         }
       }
       
       // Ajusta largura das colunas
       const colWidths = [
-        { wch: 20 }, // Horário
+        { wch: 20 }, // Data e Hora
         { wch: 18 }, // Valor Anterior
         { wch: 16 }, // Valor Atual
         { wch: 16 }  // Aumento
