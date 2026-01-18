@@ -1722,8 +1722,22 @@
       const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
       const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
 
+      // Obtém valores dos filtros
+      let dataInicio = "";
+      let dataFim = "";
+      
+      if (mode.type === "last_minutes") {
+        dataInicio = `Últimos ${mode.minutes} minutos`;
+        dataFim = `Últimos ${mode.minutes} minutos`;
+      } else {
+        const startDt = $("startDt").value;
+        const endDt = $("endDt").value;
+        dataInicio = startDt || "";
+        dataFim = endDt || "";
+      }
+
       // Cria cabeçalhos
-      const headers = ["Data e Hora"];
+      const headers = ["Data Início", "Data Fim", "Data e Hora"];
       if (showPm1) headers.push("PM1.0 (µg/m³)");
       headers.push("PM2.5 (µg/m³)");
       if (showPm10) headers.push("PM10 (µg/m³)");
@@ -1754,7 +1768,7 @@
         // Formata data e hora usando a mesma função da interface
         const dateTimeStr = fmtTime(item.timeIso).replace(" BRT", ""); // Remove "BRT" para o Excel
         
-        const row = [dateTimeStr];
+        const row = [dataInicio, dataFim, dateTimeStr];
         if (showPm1) row.push(item.pm1 !== null ? item.pm1 : "");
         row.push(item.pm25 !== null ? item.pm25 : "");
         if (showPm10) row.push(item.pm10 !== null ? item.pm10 : "");
@@ -1794,8 +1808,12 @@
         return;
       }
 
+      // Obtém valores dos filtros de picos
+      const picosStartDt = $("picosStartDt").value || "";
+      const picosEndDt = $("picosEndDt").value || "";
+
       // Cria cabeçalhos
-      const headers = ["Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
+      const headers = ["Data Início", "Data Fim", "Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
 
       // Cria dados da planilha usando timestamps originais
       const data = [headers];
@@ -1804,6 +1822,8 @@
         const dateTimeStr = fmtTime(occ.timestamp).replace(" BRT", ""); // Remove "BRT" para o Excel
         
         const row = [
+          picosStartDt,
+          picosEndDt,
           dateTimeStr,
           occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : "",
           occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value) : "",
@@ -1817,6 +1837,8 @@
       
       // Ajusta largura das colunas
       const colWidths = [
+        { wch: 18 }, // Data Início
+        { wch: 18 }, // Data Fim
         { wch: 20 }, // Data e Hora
         { wch: 18 }, // Valor Anterior
         { wch: 16 }, // Valor Atual
