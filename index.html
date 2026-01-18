@@ -1812,18 +1812,37 @@
       const picosStartDt = $("picosStartDt").value || "";
       const picosEndDt = $("picosEndDt").value || "";
 
+      // Função auxiliar para formatar apenas a data
+      function fmtDate(isoZ) {
+        try {
+          const date = new Date(isoZ);
+          const formatter = new Intl.DateTimeFormat("pt-BR", {
+            timeZone: "America/Sao_Paulo",
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit"
+          });
+          return formatter.format(date);
+        } catch {
+          return isoZ;
+        }
+      }
+
       // Cria cabeçalhos
-      const headers = ["Data Início", "Data Fim", "Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
+      const headers = ["Data Início", "Data Fim", "Data", "Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
 
       // Cria dados da planilha usando timestamps originais
       const data = [headers];
       picosData.forEach(occ => {
+        // Formata apenas a data
+        const dateStr = fmtDate(occ.timestamp);
         // Formata data e hora usando a mesma função da interface
         const dateTimeStr = fmtTime(occ.timestamp).replace(" BRT", ""); // Remove "BRT" para o Excel
         
         const row = [
           picosStartDt,
           picosEndDt,
+          dateStr,
           dateTimeStr,
           occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : "",
           occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value) : "",
@@ -1839,6 +1858,7 @@
       const colWidths = [
         { wch: 18 }, // Data Início
         { wch: 18 }, // Data Fim
+        { wch: 12 }, // Data
         { wch: 20 }, // Data e Hora
         { wch: 18 }, // Valor Anterior
         { wch: 16 }, // Valor Atual
