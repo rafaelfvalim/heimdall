@@ -879,6 +879,9 @@
               <table id="dataTable" class="data-table">
                 <thead>
                   <tr>
+                    <th class="sortable" data-sort="date">
+                      Data <span class="sort-indicator"></span>
+                    </th>
                     <th class="sortable" data-sort="time">
                       Horário <span class="sort-indicator"></span>
                     </th>
@@ -894,7 +897,7 @@
                   </tr>
                 </thead>
                 <tbody id="tableBody">
-                  <tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Carregando dados...</td></tr>
+                  <tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Carregando dados...</td></tr>
                 </tbody>
               </table>
             </div>
@@ -1296,7 +1299,7 @@
       const tableBody = $("tableBody");
       
       if (tableData.length === 0) {
-        const colCount = 1 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0);
+        const colCount = 2 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0); // +1 para coluna Data
         tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum dado disponível</td></tr>`;
         return;
       }
@@ -1307,7 +1310,7 @@
         sortedData.sort((a, b) => {
           let aVal, bVal;
           
-          if (currentSort.column === 'time') {
+          if (currentSort.column === 'time' || currentSort.column === 'date') {
             // Ordena por data/hora (usa ISO para comparação)
             aVal = new Date(a.timeIso).getTime();
             bVal = new Date(b.timeIso).getTime();
@@ -1329,6 +1332,7 @@
       // Cria as linhas da tabela
       const rows = sortedData.map(item => {
         const row = [];
+        row.push(`<td>${item.date}</td>`);
         row.push(`<td>${item.time}</td>`);
         
         if (showPm1) {
