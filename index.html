@@ -979,6 +979,22 @@
       }
     }
 
+    // Função auxiliar para formatar apenas a data
+    function fmtDate(isoZ) {
+      try {
+        const date = new Date(isoZ);
+        const formatter = new Intl.DateTimeFormat("pt-BR", {
+          timeZone: "America/Sao_Paulo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit"
+        });
+        return formatter.format(date);
+      } catch {
+        return isoZ;
+      }
+    }
+
     const ctx = $("chart");
 
     // Variável para armazenar o gauge do Plotly
@@ -1245,22 +1261,6 @@
       $("colPm1").style.display = showPm1 ? "table-cell" : "none";
       $("colPm10").style.display = showPm10 ? "table-cell" : "none";
       
-      // Função auxiliar para formatar apenas a data
-      function fmtDate(isoZ) {
-        try {
-          const date = new Date(isoZ);
-          const formatter = new Intl.DateTimeFormat("pt-BR", {
-            timeZone: "America/Sao_Paulo",
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit"
-          });
-          return formatter.format(date);
-        } catch {
-          return isoZ;
-        }
-      }
-
       if (labels.length === 0) {
         const colCount = 2 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0); // +1 para coluna Data
         tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum dado disponível</td></tr>`;
