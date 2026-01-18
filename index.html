@@ -1723,7 +1723,7 @@
       const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
 
       // Cria cabeçalhos
-      const headers = ["Data", "Hora"];
+      const headers = ["Data e Hora"];
       if (showPm1) headers.push("PM1.0 (µg/m³)");
       headers.push("PM2.5 (µg/m³)");
       if (showPm10) headers.push("PM10 (µg/m³)");
@@ -1751,40 +1751,10 @@
       // Cria dados da planilha
       const data = [headers];
       sortedData.forEach(item => {
-        // Converte timestamp ISO para timezone de São Paulo
-        const dateObj = new Date(item.timeIso);
-        const formatter = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "America/Sao_Paulo",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false
-        });
+        // Formata data e hora usando a mesma função da interface
+        const dateTimeStr = fmtTime(item.timeIso).replace(" BRT", ""); // Remove "BRT" para o Excel
         
-        const parts = formatter.formatToParts(dateObj);
-        const year = parseInt(parts.find(p => p.type === "year").value);
-        const month = parseInt(parts.find(p => p.type === "month").value) - 1; // Mês é 0-indexed
-        const day = parseInt(parts.find(p => p.type === "day").value);
-        const hour = parseInt(parts.find(p => p.type === "hour").value);
-        const minute = parseInt(parts.find(p => p.type === "minute").value);
-        const second = parseInt(parts.find(p => p.type === "second").value);
-        
-        // Separa data e hora
-        // Data: apenas a parte da data (sem hora)
-        const dateOnly = new Date(year, month, day, 0, 0, 0, 0);
-        // Calcula número serial do Excel para data (dias desde 30/12/1899)
-        // Excel usa 30/12/1899 como dia 0, mas há um bug: trata 1900 como bissexto
-        // Então a data base real é 31/12/1899
-        const excelEpoch = new Date(1899, 11, 30, 0, 0, 0, 0);
-        const excelDate = (dateOnly.getTime() - excelEpoch.getTime()) / (1000 * 60 * 60 * 24) + 1; // +1 para compensar o bug do Excel
-        
-        // Hora: apenas a parte do tempo como fração de um dia
-        const excelTime = (hour * 3600 + minute * 60 + second) / 86400; // Fração de um dia
-        
-        const row = [excelDate, excelTime];
+        const row = [dateTimeStr];
         if (showPm1) row.push(item.pm1 !== null ? item.pm1 : "");
         row.push(item.pm25 !== null ? item.pm25 : "");
         if (showPm10) row.push(item.pm10 !== null ? item.pm10 : "");
@@ -1794,31 +1764,8 @@
       // Cria a planilha
       const ws = XLSX.utils.aoa_to_sheet(data);
       
-      // Formata colunas de data e hora
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let row = 1; row <= range.e.r; row++) {
-        // Formata coluna de Data (coluna 0)
-        const dateAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
-        if (ws[dateAddress]) {
-          ws[dateAddress].z = "dd/mm/yyyy";
-          ws[dateAddress].t = 'd';
-        }
-        
-        // Formata coluna de Hora (coluna 1)
-        const timeAddress = XLSX.utils.encode_cell({ r: row, c: 1 });
-        if (ws[timeAddress]) {
-          ws[timeAddress].z = "hh:mm:ss";
-          ws[timeAddress].t = 'd';
-        }
-      }
-      
       // Ajusta largura das colunas
       const colWidths = headers.map((_, colIndex) => {
-        // Larguras fixas para Data e Hora
-        if (colIndex === 0) return { wch: 12 }; // Data
-        if (colIndex === 1) return { wch: 10 }; // Hora
-        
-        // Para outras colunas, calcula dinamicamente
         let maxLength = headers[colIndex].length;
         data.slice(1).forEach(row => {
           const cellValue = row[colIndex];
@@ -1848,47 +1795,16 @@
       }
 
       // Cria cabeçalhos
-      const headers = ["Data", "Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
+      const headers = ["Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
 
       // Cria dados da planilha usando timestamps originais
       const data = [headers];
       picosData.forEach(occ => {
-        // Converte timestamp ISO para timezone de São Paulo
-        const dateObj = new Date(occ.timestamp);
-        const formatter = new Intl.DateTimeFormat("en-CA", {
-          timeZone: "America/Sao_Paulo",
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false
-        });
-        
-        const parts = formatter.formatToParts(dateObj);
-        const year = parseInt(parts.find(p => p.type === "year").value);
-        const month = parseInt(parts.find(p => p.type === "month").value) - 1; // Mês é 0-indexed
-        const day = parseInt(parts.find(p => p.type === "day").value);
-        const hour = parseInt(parts.find(p => p.type === "hour").value);
-        const minute = parseInt(parts.find(p => p.type === "minute").value);
-        const second = parseInt(parts.find(p => p.type === "second").value);
-        
-        // Separa data e hora
-        // Data: apenas a parte da data (sem hora)
-        const dateOnly = new Date(year, month, day, 0, 0, 0, 0);
-        // Calcula número serial do Excel para data (dias desde 30/12/1899)
-        // Excel usa 30/12/1899 como dia 0, mas há um bug: trata 1900 como bissexto
-        // Então a data base real é 31/12/1899
-        const excelEpoch = new Date(1899, 11, 30, 0, 0, 0, 0);
-        const excelDate = (dateOnly.getTime() - excelEpoch.getTime()) / (1000 * 60 * 60 * 24) + 1; // +1 para compensar o bug do Excel
-        
-        // Hora: apenas a parte do tempo como fração de um dia
-        const excelTime = (hour * 3600 + minute * 60 + second) / 86400; // Fração de um dia
+        // Formata data e hora usando a mesma função da interface
+        const dateTimeStr = fmtTime(occ.timestamp).replace(" BRT", ""); // Remove "BRT" para o Excel
         
         const row = [
-          excelDate,
-          excelTime,
+          dateTimeStr,
           occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : "",
           occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value) : "",
           occ.increase !== null && occ.increase !== undefined ? Number(occ.increase) : ""
@@ -1899,28 +1815,9 @@
       // Cria a planilha
       const ws = XLSX.utils.aoa_to_sheet(data);
       
-      // Formata colunas de data e hora
-      const range = XLSX.utils.decode_range(ws['!ref']);
-      for (let row = 1; row <= range.e.r; row++) {
-        // Formata coluna de Data (coluna 0)
-        const dateAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
-        if (ws[dateAddress]) {
-          ws[dateAddress].z = "dd/mm/yyyy";
-          ws[dateAddress].t = 'd';
-        }
-        
-        // Formata coluna de Hora (coluna 1)
-        const timeAddress = XLSX.utils.encode_cell({ r: row, c: 1 });
-        if (ws[timeAddress]) {
-          ws[timeAddress].z = "hh:mm:ss";
-          ws[timeAddress].t = 'd';
-        }
-      }
-      
       // Ajusta largura das colunas
       const colWidths = [
-        { wch: 12 }, // Data
-        { wch: 10 }, // Hora
+        { wch: 20 }, // Data e Hora
         { wch: 18 }, // Valor Anterior
         { wch: 16 }, // Valor Atual
         { wch: 16 }  // Aumento
