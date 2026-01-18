@@ -799,7 +799,12 @@
         <div class="card" style="margin-top:14px;">
           <div class="card-h">
             <strong>Picos de Leituras PM2.5</strong>
-            <span class="muted">Acionamentos do relé</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="muted">Acionamentos do relé</span>
+              <button class="btn ghost" id="exportPicos" style="font-size: 12px; padding: 6px 12px;">
+                📊 Exportar para Excel
+              </button>
+            </div>
           </div>
 
           <div class="card-b">
@@ -858,7 +863,12 @@
         <div class="card" style="margin-top:14px;">
           <div class="card-h">
             <strong>Leitura Integral dos Dados</strong>
-            <span class="muted">Tabela completa de leituras</span>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span class="muted">Tabela completa de leituras</span>
+              <button class="btn ghost" id="exportData" style="font-size: 12px; padding: 6px 12px;">
+                📊 Exportar para Excel
+              </button>
+            </div>
           </div>
 
           <div class="card-b">
@@ -1688,6 +1698,87 @@
 
     // Event listener para o botão de buscar picos
     $("fetchPicos").addEventListener("click", () => fetchPicos());
+
+    // Função para exportar tabela para Excel (CSV)
+    function exportTableToExcel(tableId, filename) {
+      const table = document.getElementById(tableId);
+      if (!table) {
+        alert("Tabela não encontrada.");
+        return;
+      }
+
+      const rows = table.querySelectorAll("tr");
+      if (rows.length === 0) {
+        alert("Não há dados para exportar.");
+        return;
+      }
+
+      let csv = [];
+      
+      // Processa cada linha
+      rows.forEach(row => {
+        const cells = row.querySelectorAll("th, td");
+        const rowData = [];
+        
+        cells.forEach(cell => {
+          // Remove indicadores de ordenação e outros elementos HTML
+          const cellText = cell.cloneNode(true);
+          const indicators = cellText.querySelectorAll(".sort-indicator");
+          indicators.forEach(ind => ind.remove());
+          
+          let text = cellText.textContent.trim();
+          // Remove quebras de linha e espaços extras
+          text = text.replace(/\s+/g, " ");
+          // Escapa aspas duplas
+          text = text.replace(/"/g, '""');
+          // Adiciona aspas se contém vírgula, quebra de linha ou aspas
+          if (text.includes(",") || text.includes("\n") || text.includes('"')) {
+            text = `"${text}"`;
+          }
+          rowData.push(text);
+        });
+        
+        csv.push(rowData.join(","));
+      });
+
+      // Cria o conteúdo CSV
+      const csvContent = csv.join("\n");
+      
+      // Adiciona BOM para UTF-8 (para Excel reconhecer acentos corretamente)
+      const BOM = "\uFEFF";
+      const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
+      
+      // Cria link de download
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Event listeners para exportação
+    const exportPicosBtn = document.getElementById("exportPicos");
+    if (exportPicosBtn) {
+      exportPicosBtn.addEventListener("click", () => {
+        const startDate = $("picosStartDt").value || "inicio";
+        const endDate = $("picosEndDt").value || "fim";
+        const filename = `picos_pm25_${startDate}_${endDate}.csv`.replace(/:/g, "-");
+        exportTableToExcel("picosTable", filename);
+      });
+    }
+
+    const exportDataBtn = document.getElementById("exportData");
+    if (exportDataBtn) {
+      exportDataBtn.addEventListener("click", () => {
+        const now = new Date();
+        const dateStr = now.toISOString().split("T")[0];
+        const filename = `leituras_integrais_${dateStr}.csv`;
+        exportTableToExcel("dataTable", filename);
+      });
+    }
 
     // Accordion do Disclaimer
     const disclaimerAccordion = document.getElementById("disclaimerAccordion");
