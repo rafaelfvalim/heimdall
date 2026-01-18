@@ -1637,22 +1637,6 @@
         // Armazena dados originais para exportação
         picosData = occurrences;
 
-        // Função auxiliar para formatar apenas a data
-        function fmtDate(isoZ) {
-          try {
-            const date = new Date(isoZ);
-            const formatter = new Intl.DateTimeFormat("pt-BR", {
-              timeZone: "America/Sao_Paulo",
-              year: "numeric",
-              month: "2-digit",
-              day: "2-digit"
-            });
-            return formatter.format(date);
-          } catch {
-            return isoZ;
-          }
-        }
-
         // Atualiza a tabela
         if (occurrences.length === 0) {
           tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum pico encontrado no período selecionado</td></tr>';
@@ -1853,22 +1837,6 @@
       // Obtém valores dos filtros de picos
       const picosStartDt = $("picosStartDt").value || "";
       const picosEndDt = $("picosEndDt").value || "";
-
-      // Função auxiliar para formatar apenas a data
-      function fmtDate(isoZ) {
-        try {
-          const date = new Date(isoZ);
-          const formatter = new Intl.DateTimeFormat("pt-BR", {
-            timeZone: "America/Sao_Paulo",
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit"
-          });
-          return formatter.format(date);
-        } catch {
-          return isoZ;
-        }
-      }
 
       // Cria cabeçalhos
       const headers = ["Data Início", "Data Fim", "Data", "Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
