@@ -1075,7 +1075,8 @@
         }
         
         const pm25Value = item.pm25 !== null ? item.pm25.toFixed(1) : "—";
-        row.push(`<td>${pm25Value}</td>`);
+        const pm25Color = getPm25Color(item.pm25);
+        row.push(`<td style="color: ${pm25Color}; font-weight: 600;">${pm25Value}</td>`);
         
         if (showPm10) {
           const pm10Value = item.pm10 !== null ? item.pm10.toFixed(1) : "—";
