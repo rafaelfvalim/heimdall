@@ -1217,6 +1217,7 @@
     let tableData = [];
     let currentSort = { column: null, direction: null };
     let tableListenersAdded = false;
+    let picosData = []; // Armazena dados originais dos picos
 
     function updateDataTable(labels, series, seriesMode, labelsIso) {
       const tableBody = $("tableBody");
@@ -1609,9 +1610,13 @@
           picosTotal.textContent = total;
         }
 
+        // Armazena dados originais para exportação
+        picosData = occurrences;
+
         // Atualiza a tabela
         if (occurrences.length === 0) {
           tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum pico encontrado no período selecionado</td></tr>';
+          picosData = [];
         } else {
           tableBody.innerHTML = occurrences.map(occ => {
             const time = fmtTime(occ.timestamp);
@@ -1700,122 +1705,142 @@
     // Event listener para o botão de buscar picos
     $("fetchPicos").addEventListener("click", () => fetchPicos());
 
-    // Função para exportar tabela para Excel (XLSX)
-    function exportTableToExcel(tableId, filename) {
-      const table = document.getElementById(tableId);
-      if (!table) {
-        alert("Tabela não encontrada.");
-        return;
-      }
-
-      const rows = table.querySelectorAll("tr");
-      if (rows.length === 0) {
+    // Função para exportar tabela de leituras integrais para Excel (XLSX)
+    function exportDataTableToExcel(filename) {
+      if (tableData.length === 0) {
         alert("Não há dados para exportar.");
         return;
       }
 
-      // Verifica se a biblioteca XLSX está disponível
       if (typeof XLSX === "undefined") {
         alert("Biblioteca XLSX não carregada. Por favor, recarregue a página.");
         return;
       }
 
-      let data = [];
-      let isHeader = true;
-      let timeColumnIndex = -1;
-      
-      // Processa cada linha
-      rows.forEach((row, rowIndex) => {
-        const cells = row.querySelectorAll("th, td");
-        const rowData = [];
-        
-        cells.forEach((cell, cellIndex) => {
-          // Remove indicadores de ordenação e outros elementos HTML
-          const cellText = cell.cloneNode(true);
-          const indicators = cellText.querySelectorAll(".sort-indicator");
-          indicators.forEach(ind => ind.remove());
-          
-          let text = cellText.textContent.trim();
-          // Remove quebras de linha e espaços extras
-          text = text.replace(/\s+/g, " ");
-          
-          // Detecta coluna de horário no cabeçalho
-          if (isHeader && rowIndex === 0) {
-            if (text.toLowerCase().includes("horário") || text.toLowerCase().includes("time")) {
-              timeColumnIndex = cellIndex;
-            }
-          }
-          
-          // Se for coluna de horário e não for cabeçalho, tenta converter para data
-          if (!isHeader && cellIndex === timeColumnIndex && text && !text.includes("—")) {
-            // Remove "BRT" e espaços extras
-            let timeStr = text.replace(/BRT/gi, "").trim();
-            // Tenta parsear como data/hora (formato HH:MM:SS ou HH:MM)
-            const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
-            if (timeMatch) {
-              // Cria uma data com o horário de hoje (Excel precisa de uma data completa)
-              const today = new Date();
-              const hours = parseInt(timeMatch[1]);
-              const minutes = parseInt(timeMatch[2]);
-              const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
-              today.setHours(hours, minutes, seconds, 0);
-              // Converte para formato Excel (número de dias desde 1900-01-01)
-              const excelDate = XLSX.SSF.parse_date_code((today - new Date(1899, 11, 30)) / (1000 * 60 * 60 * 24));
-              rowData.push(today);
-            } else {
-              rowData.push(text);
-            }
+      // Determina quais colunas mostrar baseado no filtro atual
+      const seriesMode = $("seriesMode").value;
+      const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
+      const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
+
+      // Cria cabeçalhos
+      const headers = ["Horário"];
+      if (showPm1) headers.push("PM1.0 (µg/m³)");
+      headers.push("PM2.5 (µg/m³)");
+      if (showPm10) headers.push("PM10 (µg/m³)");
+
+      // Ordena dados se necessário
+      let sortedData = [...tableData];
+      if (currentSort.column && currentSort.direction) {
+        sortedData.sort((a, b) => {
+          let aVal, bVal;
+          if (currentSort.column === 'time') {
+            aVal = new Date(a.timeIso).getTime();
+            bVal = new Date(b.timeIso).getTime();
           } else {
-            // Tenta converter para número se possível
-            const numValue = parseFloat(text);
-            if (!isNaN(numValue) && text !== "" && !text.includes("—") && !text.includes("µg")) {
-              rowData.push(numValue);
-            } else {
-              rowData.push(text);
-            }
+            aVal = a[currentSort.column] !== null ? a[currentSort.column] : -Infinity;
+            bVal = b[currentSort.column] !== null ? b[currentSort.column] : -Infinity;
           }
+          if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+          return 0;
         });
-        
-        data.push(rowData);
-        isHeader = false;
+      } else {
+        sortedData.reverse(); // Mais recente primeiro
+      }
+
+      // Cria dados da planilha
+      const data = [headers];
+      sortedData.forEach(item => {
+        const row = [new Date(item.timeIso)]; // Usa timestamp ISO original
+        if (showPm1) row.push(item.pm1 !== null ? item.pm1 : "");
+        row.push(item.pm25 !== null ? item.pm25 : "");
+        if (showPm10) row.push(item.pm10 !== null ? item.pm10 : "");
+        data.push(row);
       });
 
       // Cria a planilha
       const ws = XLSX.utils.aoa_to_sheet(data);
       
       // Formata coluna de horário como data/hora
-      if (timeColumnIndex >= 0) {
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let row = 1; row <= range.e.r; row++) {
-          const cellAddress = XLSX.utils.encode_cell({ r: row, c: timeColumnIndex });
-          if (ws[cellAddress] && ws[cellAddress].v instanceof Date) {
-            // Define formato de data/hora para Excel
-            if (!ws[cellAddress].z) {
-              ws[cellAddress].z = "dd/mm/yyyy hh:mm:ss";
-            }
-            ws[cellAddress].t = 'd'; // Tipo data
-          }
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
+        if (ws[cellAddress] && ws[cellAddress].v instanceof Date) {
+          ws[cellAddress].z = "dd/mm/yyyy hh:mm:ss";
+          ws[cellAddress].t = 'd';
         }
       }
       
-      // Ajusta a largura das colunas
-      const colWidths = [];
-      data[0].forEach((_, colIndex) => {
-        let maxLength = 0;
-        data.forEach(row => {
+      // Ajusta largura das colunas
+      const colWidths = headers.map((_, colIndex) => {
+        let maxLength = headers[colIndex].length;
+        data.slice(1).forEach(row => {
           const cellValue = row[colIndex];
           const length = cellValue ? String(cellValue).length : 0;
           if (length > maxLength) maxLength = length;
         });
-        colWidths.push({ wch: Math.max(maxLength + 2, 10) });
+        return { wch: Math.max(maxLength + 2, 12) };
       });
       ws['!cols'] = colWidths;
 
-      // Cria o workbook
+      // Cria workbook e exporta
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Dados");
+      XLSX.utils.book_append_sheet(wb, ws, "Leituras");
+      XLSX.writeFile(wb, filename);
+    }
 
-      // Gera o arquivo XLSX
+    // Função para exportar tabela de picos para Excel (XLSX)
+    function exportPicosTableToExcel(filename) {
+      if (picosData.length === 0) {
+        alert("Não há dados para exportar.");
+        return;
+      }
+
+      if (typeof XLSX === "undefined") {
+        alert("Biblioteca XLSX não carregada. Por favor, recarregue a página.");
+        return;
+      }
+
+      // Cria cabeçalhos
+      const headers = ["Horário", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
+
+      // Cria dados da planilha usando timestamps originais
+      const data = [headers];
+      picosData.forEach(occ => {
+        const row = [
+          new Date(occ.timestamp), // Usa timestamp ISO original
+          occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : "",
+          occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value) : "",
+          occ.increase !== null && occ.increase !== undefined ? Number(occ.increase) : ""
+        ];
+        data.push(row);
+      });
+
+      // Cria a planilha
+      const ws = XLSX.utils.aoa_to_sheet(data);
+      
+      // Formata coluna de horário como data/hora
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let row = 1; row <= range.e.r; row++) {
+        const cellAddress = XLSX.utils.encode_cell({ r: row, c: 0 });
+        if (ws[cellAddress] && ws[cellAddress].v instanceof Date) {
+          ws[cellAddress].z = "dd/mm/yyyy hh:mm:ss";
+          ws[cellAddress].t = 'd';
+        }
+      }
+      
+      // Ajusta largura das colunas
+      const colWidths = [
+        { wch: 20 }, // Horário
+        { wch: 18 }, // Valor Anterior
+        { wch: 16 }, // Valor Atual
+        { wch: 16 }  // Aumento
+      ];
+      ws['!cols'] = colWidths;
+
+      // Cria workbook e exporta
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Picos");
       XLSX.writeFile(wb, filename);
     }
 
@@ -1826,7 +1851,7 @@
         const startDate = $("picosStartDt").value || "inicio";
         const endDate = $("picosEndDt").value || "fim";
         const filename = `picos_pm25_${startDate}_${endDate}.xlsx`.replace(/:/g, "-");
-        exportTableToExcel("picosTable", filename);
+        exportPicosTableToExcel(filename);
       });
     }
 
@@ -1836,7 +1861,7 @@
         const now = new Date();
         const dateStr = now.toISOString().split("T")[0];
         const filename = `leituras_integrais_${dateStr}.xlsx`;
-        exportTableToExcel("dataTable", filename);
+        exportDataTableToExcel(filename);
       });
     }
 
