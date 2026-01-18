@@ -1753,8 +1753,30 @@
       let dataFim = "";
       
       if (mode.type === "last_minutes") {
-        dataInicio = `Últimos ${mode.minutes} minutos`;
-        dataFim = `Últimos ${mode.minutes} minutos`;
+        // Para modo "últimos minutos", calcula a data/hora de início e fim baseado no horário atual
+        const now = new Date();
+        const endTime = new Date(now);
+        const startTime = new Date(now.getTime() - mode.minutes * 60 * 1000);
+        
+        // Formata no formato datetime-local (YYYY-MM-DDTHH:mm)
+        const formatter = new Intl.DateTimeFormat("en-CA", {
+          timeZone: "America/Sao_Paulo",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false
+        });
+        
+        const startParts = formatter.formatToParts(startTime);
+        const endParts = formatter.formatToParts(endTime);
+        
+        const startDate = `${startParts.find(p => p.type === "year").value}-${startParts.find(p => p.type === "month").value}-${startParts.find(p => p.type === "day").value}T${startParts.find(p => p.type === "hour").value}:${startParts.find(p => p.type === "minute").value}`;
+        const endDate = `${endParts.find(p => p.type === "year").value}-${endParts.find(p => p.type === "month").value}-${endParts.find(p => p.type === "day").value}T${endParts.find(p => p.type === "hour").value}:${endParts.find(p => p.type === "minute").value}`;
+        
+        dataInicio = startDate;
+        dataFim = endDate;
       } else {
         const startDt = $("startDt").value;
         const endDt = $("endDt").value;
