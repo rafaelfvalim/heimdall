@@ -582,6 +582,65 @@
           </div>
         </div>
 
+        <!-- Picos de Leituras -->
+        <div class="card" style="margin-top:14px;">
+          <div class="card-h">
+            <strong>Picos de Leituras</strong>
+            <span class="muted">Acionamentos do relé</span>
+          </div>
+
+          <div class="card-b">
+            <div class="controls">
+              <div class="row">
+                <div class="field" style="min-width: 240px;">
+                  <label>Data/Hora Início</label>
+                  <input id="picosStartDt" type="datetime-local" />
+                </div>
+
+                <div class="field" style="min-width: 240px;">
+                  <label>Data/Hora Fim</label>
+                  <input id="picosEndDt" type="datetime-local" />
+                </div>
+
+                <button class="btn primary" id="fetchPicos">Buscar Picos</button>
+              </div>
+            </div>
+
+            <div style="margin-top: 20px;">
+              <div id="picosSummary" style="padding: 16px; background: rgba(255,255,255,.04); border-radius: var(--radius-sm); margin-bottom: 16px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                  <div style="font-size: 14px; color: var(--muted);">Total de ocorrências:</div>
+                  <div id="picosTotal" style="font-size: 24px; font-weight: 600; color: var(--accent2);">—</div>
+                </div>
+              </div>
+
+              <div class="table-container">
+                <table id="picosTable" class="data-table">
+                  <thead>
+                    <tr>
+                      <th class="sortable" data-sort="time">
+                        Horário <span class="sort-indicator"></span>
+                      </th>
+                      <th class="sortable" data-sort="previous">
+                        Valor Anterior (µg/m³) <span class="sort-indicator"></span>
+                      </th>
+                      <th class="sortable" data-sort="current">
+                        Valor Atual (µg/m³) <span class="sort-indicator"></span>
+                      </th>
+                      <th class="sortable" data-sort="increase">
+                        Aumento (µg/m³) <span class="sort-indicator"></span>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody id="picosTableBody">
+                    <tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Selecione um range de data/hora e clique em "Buscar Picos"</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div><!-- /content -->
     </div><!-- /shell -->
   </div><!-- /wrap -->
@@ -1146,6 +1205,176 @@
     $("reload").addEventListener("click", () => reloadNow());
     $("autoRefresh").addEventListener("change", () => resetTimerIfNeeded());
     $("seriesMode").addEventListener("change", () => reloadNow());
+
+    // Função genérica para inicializar ordenação de tabela
+    function initTableSorting(tableId, tbodyId) {
+      const table = document.getElementById(tableId);
+      if (!table) return;
+
+      const tbody = document.getElementById(tbodyId);
+      if (!tbody) return;
+
+      // Remove listeners anteriores se existirem
+      const headers = table.querySelectorAll('th.sortable');
+      headers.forEach(th => {
+        const newTh = th.cloneNode(true);
+        th.parentNode.replaceChild(newTh, th);
+      });
+
+      // Adiciona novos listeners
+      table.querySelectorAll('th.sortable').forEach(th => {
+        th.style.cursor = 'pointer';
+        th.addEventListener('click', () => {
+          const sortColumn = th.getAttribute('data-sort');
+          const rows = Array.from(tbody.querySelectorAll('tr'));
+          
+          // Remove indicadores de todas as colunas
+          table.querySelectorAll('th.sortable').forEach(h => {
+            h.removeAttribute('data-sort-direction');
+            const indicator = h.querySelector('.sort-indicator');
+            if (indicator) indicator.textContent = '';
+          });
+
+          // Determina direção
+          const currentDir = th.getAttribute('data-sort-direction');
+          const newDir = currentDir === 'asc' ? 'desc' : 'asc';
+          th.setAttribute('data-sort-direction', newDir);
+          
+          const indicator = th.querySelector('.sort-indicator');
+          if (indicator) indicator.textContent = newDir === 'asc' ? ' ↑' : ' ↓';
+
+          // Ordena as linhas
+          rows.sort((a, b) => {
+            const aCell = a.querySelector(`td:nth-child(${Array.from(th.parentNode.children).indexOf(th) + 1})`);
+            const bCell = b.querySelector(`td:nth-child(${Array.from(th.parentNode.children).indexOf(th) + 1})`);
+            
+            if (!aCell || !bCell) return 0;
+            
+            let aVal = aCell.textContent.trim();
+            let bVal = bCell.textContent.trim();
+            
+            // Tenta converter para número
+            const aNum = parseFloat(aVal);
+            const bNum = parseFloat(bVal);
+            
+            if (!isNaN(aNum) && !isNaN(bNum)) {
+              return newDir === 'asc' ? aNum - bNum : bNum - aNum;
+            }
+            
+            // Ordenação por data/hora (contém "BRT")
+            if (aVal.includes('BRT') && bVal.includes('BRT')) {
+              const aDate = new Date(aVal.replace(' BRT', ''));
+              const bDate = new Date(bVal.replace(' BRT', ''));
+              return newDir === 'asc' ? aDate - bDate : bDate - aDate;
+            }
+            
+            // Ordenação alfabética
+            return newDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+          });
+
+          // Reordena as linhas no DOM
+          rows.forEach(row => tbody.appendChild(row));
+        });
+      });
+    }
+
+    // Função para buscar picos de leituras
+    async function fetchPicos() {
+      const base = $("apiBase").value.replace(/\/+$/, "");
+      const apiKey = $("apiKey").value.trim();
+
+      if (!apiKey) {
+        alert("Erro: API Key é obrigatória.");
+        return;
+      }
+
+      const startIso = localInputToUtcIsoZ($("picosStartDt").value);
+      const endIso = localInputToUtcIsoZ($("picosEndDt").value);
+
+      if (!startIso || !endIso) {
+        alert("Preencha a data/hora de início e fim.");
+        return;
+      }
+
+      // Constrói a URL da API de picos
+      let picosUrl;
+      try {
+        const urlObj = new URL(base);
+        const hostname = urlObj.hostname.replace("sites-automator", "sites-api-rele");
+        picosUrl = `${urlObj.protocol}//${hostname}/rele/picos`;
+      } catch (e) {
+        picosUrl = base.replace("sites-automator", "sites-api-rele").replace(/\/chart.*$/, "") + "/rele/picos";
+        if (!picosUrl.startsWith("http")) {
+          picosUrl = base.replace(/\/chart.*$/, "").replace("automator", "api-rele") + "/rele/picos";
+        }
+      }
+
+      picosUrl += "?start=" + encodeURIComponent(startIso) + "&end=" + encodeURIComponent(endIso) + "&api_key=" + encodeURIComponent(apiKey);
+
+      const tableBody = $("picosTableBody");
+      const picosTotal = $("picosTotal");
+
+      tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Carregando...</td></tr>';
+
+      try {
+        const res = await fetch(picosUrl, { cache: "no-store" });
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}`);
+        }
+        const data = await res.json();
+
+        if (!data.ok) {
+          throw new Error("Resposta inválida da API");
+        }
+
+        const occurrences = data.occurrences || [];
+        const total = data.total_occurrences || occurrences.length;
+
+        // Atualiza o total
+        if (picosTotal) {
+          picosTotal.textContent = total;
+        }
+
+        // Atualiza a tabela
+        if (occurrences.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum pico encontrado no período selecionado</td></tr>';
+        } else {
+          tableBody.innerHTML = occurrences.map(occ => {
+            const time = fmtTime(occ.timestamp);
+            const previous = occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value).toFixed(1) : "—";
+            const current = occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value).toFixed(1) : "—";
+            const increase = occ.increase !== null && occ.increase !== undefined ? Number(occ.increase).toFixed(1) : "—";
+            
+            return `
+              <tr>
+                <td>${time}</td>
+                <td>${previous}</td>
+                <td>${current}</td>
+                <td style="color: ${Number(occ.increase) > 50 ? '#F44336' : Number(occ.increase) > 20 ? '#FFC107' : '#4CAF50'}; font-weight: 600;">${increase}</td>
+              </tr>
+            `;
+          }).join("");
+
+          // Adiciona ordenação à tabela de picos
+          initTableSorting("picosTable", "picosTableBody");
+        }
+      } catch (e) {
+        let errorMsg = e.message || String(e);
+        if (errorMsg.includes("CORS") || errorMsg.includes("blocked") ||
+            errorMsg.includes("Access-Control") || errorMsg.includes("Failed to fetch") ||
+            errorMsg.includes("network")) {
+          errorMsg = "CORS: A API bloqueou a requisição. Configure CORS no servidor.";
+        }
+        tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: #F44336; padding: 20px;">Erro: ${errorMsg}</td></tr>`;
+        if (picosTotal) {
+          picosTotal.textContent = "—";
+        }
+        console.error("Erro ao buscar picos:", e);
+      }
+    }
+
+    // Event listener para o botão de buscar picos
+    $("fetchPicos").addEventListener("click", () => fetchPicos());
 
     // Inicializa
     drawGauge(null); // Desenha o velocímetro inicialmente
