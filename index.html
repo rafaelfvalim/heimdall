@@ -956,11 +956,11 @@
                       <th class="sortable" data-sort="time">
                         Horário <span class="sort-indicator"></span>
                       </th>
+                      <th class="sortable" data-sort="current">
+                        Valor de Pico (µg/m³) <span class="sort-indicator"></span>
+                      </th>
                       <th class="sortable" data-sort="previous">
                         Valor Anterior (µg/m³) <span class="sort-indicator"></span>
-                      </th>
-                      <th class="sortable" data-sort="current">
-                        Valor Atual (µg/m³) <span class="sort-indicator"></span>
                       </th>
                       <th class="sortable" data-sort="increase">
                         Aumento (µg/m³) <span class="sort-indicator"></span>
@@ -1773,8 +1773,8 @@
               <tr>
                 <td>${date}</td>
                 <td>${time}</td>
-                <td style="color: ${previousColor}; font-weight: 600;">${previous}</td>
                 <td style="color: ${currentColor}; font-weight: 600;">${current}</td>
+                <td style="color: ${previousColor}; font-weight: 600;">${previous}</td>
                 <td style="color: ${Number(occ.increase) > 50 ? '#F44336' : Number(occ.increase) > 20 ? '#FFC107' : '#4CAF50'}; font-weight: 600;">${increase}</td>
               </tr>
             `;
