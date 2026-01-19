@@ -668,7 +668,7 @@
 
         <div class="grid">
           <!-- KPIs -->
-          <div class="card">
+    <div class="card">
             <div class="card-h">
               <strong>Resumo</strong>
               <span class="muted">PM2.5 em µg/m³</span>
@@ -683,23 +683,23 @@
                   <div id="gaugeStatus" style="margin-top: 4px; font-size: 12px; color: var(--muted-2);">—</div>
                 </div>
 
-                <div class="kpi">
+        <div class="kpi">
                   <div class="label">Últimas 5 leituras</div>
                   <div class="value big" style="opacity:.92;">PM2.5</div>
                   <div id="kpiReadings">
                     <div style="text-align:center; color: rgba(255,255,255,.45); padding: 8px 0;">—</div>
-                  </div>
+        </div>
                 </div>
 
-                <div class="kpi">
+        <div class="kpi">
                   <div class="label">Modo</div>
                   <div id="kpiMode" class="value">—</div>
                   <div class="sep" style="margin:12px 0;"></div>
                   <div class="label">Tipo de leitura</div>
                   <div id="kpiSeriesType" class="value">—</div>
-                </div>
+        </div>
 
-                <div class="kpi">
+        <div class="kpi">
                   <div class="label">Média (últimas 5)</div>
                   <div id="kpiAverage" class="value big">—</div>
                   <div class="sep" style="margin:12px 0;"></div>
@@ -713,15 +713,15 @@
                   <div class="hint">Auto-refresh disponível no modo "últimos minutos".</div>
                 </div>
               </div>
-            </div>
-          </div>
+        </div>
+      </div>
 
           <!-- Níveis de Qualidade do Ar -->
           <div class="card" style="margin-top:14px;">
             <div class="card-h">
               <strong>Níveis de Qualidade do Ar</strong>
               <span class="muted">Classificação PM2.5</span>
-            </div>
+          </div>
 
             <div class="card-b">
               <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
@@ -841,54 +841,54 @@
               <div class="controls">
                 <div class="row">
                   <div class="field">
-                    <label>Atualização automática (modo minutos)</label>
-                    <select id="autoRefresh">
-                      <option value="on" selected>Ligado (10s)</option>
-                      <option value="off">Desligado</option>
-                    </select>
-                  </div>
+            <label>Atualização automática (modo minutos)</label>
+            <select id="autoRefresh">
+              <option value="on" selected>Ligado (10s)</option>
+              <option value="off">Desligado</option>
+            </select>
+          </div>
 
                   <div class="field">
-                    <label>Séries</label>
-                    <select id="seriesMode">
-                      <option value="pm25" selected>PM2.5</option>
-                      <option value="pm25_pm1">PM2.5 + PM1.0</option>
-                      <option value="pm25_pm10">PM2.5 + PM10</option>
-                      <option value="all">PM1.0 + PM2.5 + PM10</option>
-                    </select>
-                  </div>
-                </div>
+            <label>Séries</label>
+            <select id="seriesMode">
+              <option value="pm25" selected>PM2.5</option>
+              <option value="pm25_pm1">PM2.5 + PM1.0</option>
+              <option value="pm25_pm10">PM2.5 + PM10</option>
+              <option value="all">PM1.0 + PM2.5 + PM10</option>
+            </select>
+          </div>
+        </div>
 
-                <div class="sep"></div>
+        <div class="sep"></div>
 
                 <div class="field" style="min-width: 100%;">
-                  <label>Últimos minutos (rápido)</label>
+            <label>Últimos minutos (rápido)</label>
                   <div class="pills">
                     <button class="btn primary" data-min="15">15 min</button>
                     <button class="btn primary" data-min="30">30 min</button>
                     <button class="btn primary" data-min="60">60 min</button>
                     <button class="btn primary" data-min="180">180 min</button>
-                  </div>
-                </div>
+            </div>
+          </div>
 
                 <div class="row">
                   <div class="field" style="min-width: 240px;">
                     <label>Range (início)</label>
-                    <input id="startDt" type="datetime-local" />
-                  </div>
+            <input id="startDt" type="datetime-local" />
+          </div>
 
                   <div class="field" style="min-width: 240px;">
-                    <label>Range (fim)</label>
-                    <input id="endDt" type="datetime-local" />
-                  </div>
+            <label>Range (fim)</label>
+            <input id="endDt" type="datetime-local" />
+          </div>
 
                   <button class="btn ghost" id="applyRange">Aplicar range</button>
                   <button class="btn ghost" id="reload">Recarregar</button>
-                </div>
+          </div>
               </div>
-            </div>
           </div>
         </div>
+      </div>
 
         <!-- Chart -->
         <div class="card" style="margin-top:14px;">
@@ -899,15 +899,15 @@
 
           <div class="chartbox">
             <div class="chartframe">
-              <canvas id="chart"></canvas>
+        <canvas id="chart"></canvas>
 
               <div class="status">
                 <div id="status">—</div>
                 <div class="hint">Dica: use "últimos minutos" para auto-refresh.</div>
               </div>
-            </div>
-          </div>
-        </div>
+      </div>
+    </div>
+  </div>
 
         <!-- Picos de Leituras -->
         <div class="card" style="margin-top:14px;">
@@ -1337,7 +1337,7 @@
         // Atualiza o velocímetro com o último valor
         const lastValue = validReadings[0].value;
         drawGauge(lastValue);
-      } else {
+        } else {
         readingsContainer.innerHTML = '<div style="text-align: center; color: rgba(255,255,255,.45); padding: 8px 0;">Nenhuma leitura disponível</div>';
         $("kpiAverage").textContent = "—";
         drawGauge(null);
@@ -1406,7 +1406,7 @@
             if (currentSort.column === sortColumn) {
               // Alterna direção se clicar na mesma coluna
               currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-            } else {
+      } else {
               // Nova coluna, começa com ascendente
               currentSort.column = sortColumn;
               currentSort.direction = 'asc';
@@ -1975,7 +1975,7 @@
       const picosEndDt = $("picosEndDt").value || "";
 
       // Cria cabeçalhos
-      const headers = ["Data Início", "Data Fim", "Data", "Data e Hora", "Valor Anterior (µg/m³)", "Valor Atual (µg/m³)", "Aumento (µg/m³)"];
+      const headers = ["Data Início", "Data Fim", "Data", "Data e Hora", "Valor de Pico (µg/m³)", "Valor Anterior (µg/m³)", "Aumento (µg/m³)"];
 
       // Cria dados da planilha usando timestamps originais
       const data = [headers];
@@ -1990,8 +1990,8 @@
           picosEndDt,
           dateStr,
           dateTimeStr,
-          occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : "",
           occ.current_value !== null && occ.current_value !== undefined ? Number(occ.current_value) : "",
+          occ.previous_value !== null && occ.previous_value !== undefined ? Number(occ.previous_value) : "",
           occ.increase !== null && occ.increase !== undefined ? Number(occ.increase) : ""
         ];
         data.push(row);
@@ -2006,8 +2006,8 @@
         { wch: 18 }, // Data Fim
         { wch: 12 }, // Data
         { wch: 20 }, // Data e Hora
+        { wch: 18 }, // Valor de Pico
         { wch: 18 }, // Valor Anterior
-        { wch: 16 }, // Valor Atual
         { wch: 16 }  // Aumento
       ];
       ws['!cols'] = colWidths;
