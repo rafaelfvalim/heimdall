@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Monitor PMS5003 (PM2.5)</title>
+  <title>Monitor SPS30 (PM2.5)</title>
 
   <style>
     :root{
@@ -663,7 +663,7 @@
 
       <div class="content">
         <!-- Campos ocultos para variáveis de ambiente -->
-        <input id="apiBase" type="hidden" value="__API_BASE_URL__" />
+        <input id="apiBase" type="hidden" value="https://sites-automator.aal5pu.easypanel.host" />
         <input id="apiKey" type="hidden" value="__API_KEY__" />
 
         <div class="grid">
@@ -1244,10 +1244,10 @@
       const ds = [];
       const add = (label, data) => ds.push({ label, data, tension: 0.25, pointRadius: 0 });
 
-      if (seriesMode === "pm25") add("PM2.5 (µg/m³)", series.pm25);
-      if (seriesMode === "pm25_pm1") { add("PM2.5 (µg/m³)", series.pm25); add("PM1.0 (µg/m³)", series.pm1); }
-      if (seriesMode === "pm25_pm10") { add("PM2.5 (µg/m³)", series.pm25); add("PM10 (µg/m³)", series.pm10); }
-      if (seriesMode === "all") { add("PM1.0 (µg/m³)", series.pm1); add("PM2.5 (µg/m³)", series.pm25); add("PM10 (µg/m³)", series.pm10); }
+      if (seriesMode === "pm25") add("PM2.5 (µg/m³)", series.pm2_5);
+      if (seriesMode === "pm25_pm1") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM1.0 (µg/m³)", series.pm1_0); }
+      if (seriesMode === "pm25_pm10") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM10 (µg/m³)", series.pm10); }
+      if (seriesMode === "all") { add("PM1.0 (µg/m³)", series.pm1_0); add("PM2.5 (µg/m³)", series.pm2_5); add("PM10 (µg/m³)", series.pm10); }
 
       return ds;
     }
@@ -1299,7 +1299,7 @@
       if (!js.ok) throw new Error("Resposta inválida da API");
 
       const labels = (js.labels || []).map(iso => fmtTime(iso));
-      const series = js.series || { pm1: [], pm25: [], pm10: [] };
+      const series = js.series || { pm1_0: [], pm2_5: [], pm10: [] };
 
       const datasets = buildDatasets(seriesMode, series);
 
@@ -1309,7 +1309,7 @@
 
       // KPI: últimas 5 leituras de PM2.5
       const readingsContainer = $("kpiReadings");
-      const pm25 = series.pm25 || [];
+      const pm25 = series.pm2_5 || [];
       const labelsIso = js.labels || [];
 
       const validReadings = [];
@@ -1357,8 +1357,8 @@
 
     function updateDataTable(labels, series, seriesMode, labelsIso) {
       const tableBody = $("tableBody");
-      const pm1 = series.pm1 || [];
-      const pm25 = series.pm25 || [];
+      const pm1 = series.pm1_0 || [];
+      const pm25 = series.pm2_5 || [];
       const pm10 = series.pm10 || [];
       
       // Reseta ordenação quando novos dados são carregados
