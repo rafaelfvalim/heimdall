@@ -849,13 +849,44 @@
           </div>
 
                   <div class="field">
-            <label>Séries</label>
+            <label>Séries (Mass Concentration)</label>
             <select id="seriesMode">
               <option value="pm25" selected>PM2.5</option>
               <option value="pm25_pm1">PM2.5 + PM1.0</option>
+              <option value="pm25_pm4">PM2.5 + PM4.0</option>
               <option value="pm25_pm10">PM2.5 + PM10</option>
-              <option value="all">PM1.0 + PM2.5 + PM10</option>
+              <option value="all">PM1.0 + PM2.5 + PM4.0 + PM10</option>
             </select>
+          </div>
+          
+          <div class="field">
+            <label>Colunas Adicionais</label>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: normal;">
+                <input type="checkbox" id="showNc0_5" style="width: auto;">
+                <span>NC0.5 (#/cm³)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: normal;">
+                <input type="checkbox" id="showNc1_0" style="width: auto;">
+                <span>NC1.0 (#/cm³)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: normal;">
+                <input type="checkbox" id="showNc2_5" style="width: auto;">
+                <span>NC2.5 (#/cm³)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: normal;">
+                <input type="checkbox" id="showNc4_0" style="width: auto;">
+                <span>NC4.0 (#/cm³)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: normal;">
+                <input type="checkbox" id="showNc10" style="width: auto;">
+                <span>NC10 (#/cm³)</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: normal;">
+                <input type="checkbox" id="showTypicalSize" style="width: auto;">
+                <span>Tamanho Típico (µm)</span>
+              </label>
+            </div>
           </div>
         </div>
 
@@ -1005,8 +1036,29 @@
                     <th id="colPm25" class="sortable" data-sort="pm25">
                       PM2.5 (µg/m³) <span class="sort-indicator"></span>
                     </th>
+                    <th id="colPm4" class="sortable" data-sort="pm4" style="display: none;">
+                      PM4.0 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
                     <th id="colPm10" class="sortable" data-sort="pm10" style="display: none;">
                       PM10 (µg/m³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colNc0_5" class="sortable" data-sort="nc0_5" style="display: none;">
+                      NC0.5 (#/cm³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colNc1_0" class="sortable" data-sort="nc1_0" style="display: none;">
+                      NC1.0 (#/cm³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colNc2_5" class="sortable" data-sort="nc2_5" style="display: none;">
+                      NC2.5 (#/cm³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colNc4_0" class="sortable" data-sort="nc4_0" style="display: none;">
+                      NC4.0 (#/cm³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colNc10" class="sortable" data-sort="nc10" style="display: none;">
+                      NC10 (#/cm³) <span class="sort-indicator"></span>
+                    </th>
+                    <th id="colTypicalSize" class="sortable" data-sort="typicalSize" style="display: none;">
+                      Tamanho Típico (µm) <span class="sort-indicator"></span>
                     </th>
                   </tr>
                 </thead>
@@ -1246,8 +1298,9 @@
 
       if (seriesMode === "pm25") add("PM2.5 (µg/m³)", series.pm2_5);
       if (seriesMode === "pm25_pm1") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM1.0 (µg/m³)", series.pm1_0); }
+      if (seriesMode === "pm25_pm4") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM4.0 (µg/m³)", series.pm4_0); }
       if (seriesMode === "pm25_pm10") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM10 (µg/m³)", series.pm10); }
-      if (seriesMode === "all") { add("PM1.0 (µg/m³)", series.pm1_0); add("PM2.5 (µg/m³)", series.pm2_5); add("PM10 (µg/m³)", series.pm10); }
+      if (seriesMode === "all") { add("PM1.0 (µg/m³)", series.pm1_0); add("PM2.5 (µg/m³)", series.pm2_5); add("PM4.0 (µg/m³)", series.pm4_0); add("PM10 (µg/m³)", series.pm10); }
 
       return ds;
     }
@@ -1276,8 +1329,9 @@
       const seriesTypeMap = {
         "pm25": "PM2.5",
         "pm25_pm1": "PM2.5 + PM1.0",
+        "pm25_pm4": "PM2.5 + PM4.0",
         "pm25_pm10": "PM2.5 + PM10",
-        "all": "PM1.0 + PM2.5 + PM10"
+        "all": "PM1.0 + PM2.5 + PM4.0 + PM10"
       };
       $("kpiSeriesType").textContent = seriesTypeMap[seriesMode] || "—";
 
@@ -1299,7 +1353,11 @@
       if (!js.ok) throw new Error("Resposta inválida da API");
 
       const labels = (js.labels || []).map(iso => fmtTime(iso));
-      const series = js.series || { pm1_0: [], pm2_5: [], pm10: [] };
+      const series = js.series || { 
+        pm1_0: [], pm2_5: [], pm4_0: [], pm10: [],
+        nc0_5: [], nc1_0: [], nc2_5: [], nc4_0: [], nc10: [],
+        typical_particle_size: []
+      };
 
       const datasets = buildDatasets(seriesMode, series);
 
@@ -1359,7 +1417,14 @@
       const tableBody = $("tableBody");
       const pm1 = series.pm1_0 || [];
       const pm25 = series.pm2_5 || [];
+      const pm4 = series.pm4_0 || [];
       const pm10 = series.pm10 || [];
+      const nc0_5 = series.nc0_5 || [];
+      const nc1_0 = series.nc1_0 || [];
+      const nc2_5 = series.nc2_5 || [];
+      const nc4_0 = series.nc4_0 || [];
+      const nc10 = series.nc10 || [];
+      const typicalSize = series.typical_particle_size || [];
       
       // Reseta ordenação quando novos dados são carregados
       currentSort = { column: null, direction: null };
@@ -1370,13 +1435,31 @@
       // Mostra/oculta colunas baseado no filtro selecionado
       const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
       const showPm25 = true; // Sempre mostra PM2.5
+      const showPm4 = seriesMode === "pm25_pm4" || seriesMode === "all";
       const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
       
+      // Verifica checkboxes para colunas adicionais
+      const showNc0_5 = $("showNc0_5")?.checked || false;
+      const showNc1_0 = $("showNc1_0")?.checked || false;
+      const showNc2_5 = $("showNc2_5")?.checked || false;
+      const showNc4_0 = $("showNc4_0")?.checked || false;
+      const showNc10 = $("showNc10")?.checked || false;
+      const showTypicalSize = $("showTypicalSize")?.checked || false;
+      
       $("colPm1").style.display = showPm1 ? "table-cell" : "none";
+      $("colPm4").style.display = showPm4 ? "table-cell" : "none";
       $("colPm10").style.display = showPm10 ? "table-cell" : "none";
+      $("colNc0_5").style.display = showNc0_5 ? "table-cell" : "none";
+      $("colNc1_0").style.display = showNc1_0 ? "table-cell" : "none";
+      $("colNc2_5").style.display = showNc2_5 ? "table-cell" : "none";
+      $("colNc4_0").style.display = showNc4_0 ? "table-cell" : "none";
+      $("colNc10").style.display = showNc10 ? "table-cell" : "none";
+      $("colTypicalSize").style.display = showTypicalSize ? "table-cell" : "none";
       
       if (labels.length === 0) {
-        const colCount = 2 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0); // +1 para coluna Data
+        const colCount = 2 + (showPm1 ? 1 : 0) + 1 + (showPm4 ? 1 : 0) + (showPm10 ? 1 : 0) + 
+                         (showNc0_5 ? 1 : 0) + (showNc1_0 ? 1 : 0) + (showNc2_5 ? 1 : 0) + 
+                         (showNc4_0 ? 1 : 0) + (showNc10 ? 1 : 0) + (showTypicalSize ? 1 : 0);
         tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum dado disponível</td></tr>`;
         tableData = [];
         return;
@@ -1391,12 +1474,19 @@
           timeIso: labelsIso[i],
           pm1: pm1[i] !== null && pm1[i] !== undefined ? Number(pm1[i]) : null,
           pm25: pm25[i] !== null && pm25[i] !== undefined ? Number(pm25[i]) : null,
-          pm10: pm10[i] !== null && pm10[i] !== undefined ? Number(pm10[i]) : null
+          pm4: pm4[i] !== null && pm4[i] !== undefined ? Number(pm4[i]) : null,
+          pm10: pm10[i] !== null && pm10[i] !== undefined ? Number(pm10[i]) : null,
+          nc0_5: nc0_5[i] !== null && nc0_5[i] !== undefined ? Number(nc0_5[i]) : null,
+          nc1_0: nc1_0[i] !== null && nc1_0[i] !== undefined ? Number(nc1_0[i]) : null,
+          nc2_5: nc2_5[i] !== null && nc2_5[i] !== undefined ? Number(nc2_5[i]) : null,
+          nc4_0: nc4_0[i] !== null && nc4_0[i] !== undefined ? Number(nc4_0[i]) : null,
+          nc10: nc10[i] !== null && nc10[i] !== undefined ? Number(nc10[i]) : null,
+          typicalSize: typicalSize[i] !== null && typicalSize[i] !== undefined ? Number(typicalSize[i]) : null
         });
       }
       
       // Renderiza a tabela
-      renderTable(showPm1, showPm10);
+      renderTable(showPm1, showPm4, showPm10, showNc0_5, showNc1_0, showNc2_5, showNc4_0, showNc10, showTypicalSize);
       
       // Adiciona event listeners nos cabeçalhos (apenas uma vez)
       if (!tableListenersAdded) {
@@ -1419,18 +1509,29 @@
             th.setAttribute('data-sort-direction', currentSort.direction);
             
             // Re-renderiza a tabela
-            renderTable(showPm1, showPm10);
+            const showPm1 = $("seriesMode").value === "pm25_pm1" || $("seriesMode").value === "all";
+            const showPm4 = $("seriesMode").value === "pm25_pm4" || $("seriesMode").value === "all";
+            const showPm10 = $("seriesMode").value === "pm25_pm10" || $("seriesMode").value === "all";
+            const showNc0_5 = $("showNc0_5")?.checked || false;
+            const showNc1_0 = $("showNc1_0")?.checked || false;
+            const showNc2_5 = $("showNc2_5")?.checked || false;
+            const showNc4_0 = $("showNc4_0")?.checked || false;
+            const showNc10 = $("showNc10")?.checked || false;
+            const showTypicalSize = $("showTypicalSize")?.checked || false;
+            renderTable(showPm1, showPm4, showPm10, showNc0_5, showNc1_0, showNc2_5, showNc4_0, showNc10, showTypicalSize);
           });
         });
         tableListenersAdded = true;
       }
     }
 
-    function renderTable(showPm1, showPm10) {
+    function renderTable(showPm1, showPm4, showPm10, showNc0_5, showNc1_0, showNc2_5, showNc4_0, showNc10, showTypicalSize) {
       const tableBody = $("tableBody");
       
       if (tableData.length === 0) {
-        const colCount = 2 + (showPm1 ? 1 : 0) + 1 + (showPm10 ? 1 : 0); // +1 para coluna Data
+        const colCount = 2 + (showPm1 ? 1 : 0) + 1 + (showPm4 ? 1 : 0) + (showPm10 ? 1 : 0) + 
+                         (showNc0_5 ? 1 : 0) + (showNc1_0 ? 1 : 0) + (showNc2_5 ? 1 : 0) + 
+                         (showNc4_0 ? 1 : 0) + (showNc10 ? 1 : 0) + (showTypicalSize ? 1 : 0);
         tableBody.innerHTML = `<tr><td colspan="${colCount}" style="text-align: center; color: rgba(255,255,255,.45); padding: 20px;">Nenhum dado disponível</td></tr>`;
         return;
       }
@@ -1475,9 +1576,44 @@
         const pm25Color = getPm25Color(item.pm25);
         row.push(`<td style="color: ${pm25Color}; font-weight: 600;">${pm25Value}</td>`);
         
+        if (showPm4) {
+          const pm4Value = item.pm4 !== null ? item.pm4.toFixed(1) : "—";
+          row.push(`<td>${pm4Value}</td>`);
+        }
+        
         if (showPm10) {
           const pm10Value = item.pm10 !== null ? item.pm10.toFixed(1) : "—";
           row.push(`<td>${pm10Value}</td>`);
+        }
+        
+        if (showNc0_5) {
+          const nc0_5Value = item.nc0_5 !== null ? item.nc0_5.toFixed(2) : "—";
+          row.push(`<td>${nc0_5Value}</td>`);
+        }
+        
+        if (showNc1_0) {
+          const nc1_0Value = item.nc1_0 !== null ? item.nc1_0.toFixed(2) : "—";
+          row.push(`<td>${nc1_0Value}</td>`);
+        }
+        
+        if (showNc2_5) {
+          const nc2_5Value = item.nc2_5 !== null ? item.nc2_5.toFixed(2) : "—";
+          row.push(`<td>${nc2_5Value}</td>`);
+        }
+        
+        if (showNc4_0) {
+          const nc4_0Value = item.nc4_0 !== null ? item.nc4_0.toFixed(2) : "—";
+          row.push(`<td>${nc4_0Value}</td>`);
+        }
+        
+        if (showNc10) {
+          const nc10Value = item.nc10 !== null ? item.nc10.toFixed(2) : "—";
+          row.push(`<td>${nc10Value}</td>`);
+        }
+        
+        if (showTypicalSize) {
+          const typicalSizeValue = item.typicalSize !== null ? item.typicalSize.toFixed(3) : "—";
+          row.push(`<td>${typicalSizeValue}</td>`);
         }
         
         return `<tr>${row.join("")}</tr>`;
@@ -1603,6 +1739,27 @@
     $("reload").addEventListener("click", () => reloadNow());
     $("autoRefresh").addEventListener("change", () => resetTimerIfNeeded());
     $("seriesMode").addEventListener("change", () => reloadNow());
+    
+    // Event listeners para checkboxes de colunas adicionais
+    ["showNc0_5", "showNc1_0", "showNc2_5", "showNc4_0", "showNc10", "showTypicalSize"].forEach(id => {
+      const checkbox = $(id);
+      if (checkbox) {
+        checkbox.addEventListener("change", () => {
+          // Re-renderiza a tabela com as novas seleções
+          const seriesMode = $("seriesMode").value;
+          const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
+          const showPm4 = seriesMode === "pm25_pm4" || seriesMode === "all";
+          const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
+          const showNc0_5 = $("showNc0_5")?.checked || false;
+          const showNc1_0 = $("showNc1_0")?.checked || false;
+          const showNc2_5 = $("showNc2_5")?.checked || false;
+          const showNc4_0 = $("showNc4_0")?.checked || false;
+          const showNc10 = $("showNc10")?.checked || false;
+          const showTypicalSize = $("showTypicalSize")?.checked || false;
+          renderTable(showPm1, showPm4, showPm10, showNc0_5, showNc1_0, showNc2_5, showNc4_0, showNc10, showTypicalSize);
+        });
+      }
+    });
 
     // Função genérica para inicializar ordenação de tabela
     function initTableSorting(tableId, tbodyId) {
@@ -1860,7 +2017,14 @@
       // Determina quais colunas mostrar baseado no filtro atual
       const seriesMode = $("seriesMode").value;
       const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
+      const showPm4 = seriesMode === "pm25_pm4" || seriesMode === "all";
       const showPm10 = seriesMode === "pm25_pm10" || seriesMode === "all";
+      const showNc0_5 = $("showNc0_5")?.checked || false;
+      const showNc1_0 = $("showNc1_0")?.checked || false;
+      const showNc2_5 = $("showNc2_5")?.checked || false;
+      const showNc4_0 = $("showNc4_0")?.checked || false;
+      const showNc10 = $("showNc10")?.checked || false;
+      const showTypicalSize = $("showTypicalSize")?.checked || false;
 
       // Obtém valores dos filtros
       let dataInicio = "";
@@ -1902,7 +2066,14 @@
       const headers = ["Data Início", "Data Fim", "Data e Hora"];
       if (showPm1) headers.push("PM1.0 (µg/m³)");
       headers.push("PM2.5 (µg/m³)");
+      if (showPm4) headers.push("PM4.0 (µg/m³)");
       if (showPm10) headers.push("PM10 (µg/m³)");
+      if (showNc0_5) headers.push("NC0.5 (#/cm³)");
+      if (showNc1_0) headers.push("NC1.0 (#/cm³)");
+      if (showNc2_5) headers.push("NC2.5 (#/cm³)");
+      if (showNc4_0) headers.push("NC4.0 (#/cm³)");
+      if (showNc10) headers.push("NC10 (#/cm³)");
+      if (showTypicalSize) headers.push("Tamanho Típico (µm)");
 
       // Ordena dados se necessário
       let sortedData = [...tableData];
@@ -1933,7 +2104,14 @@
         const row = [dataInicio, dataFim, dateTimeStr];
         if (showPm1) row.push(item.pm1 !== null ? item.pm1 : "");
         row.push(item.pm25 !== null ? item.pm25 : "");
+        if (showPm4) row.push(item.pm4 !== null ? item.pm4 : "");
         if (showPm10) row.push(item.pm10 !== null ? item.pm10 : "");
+        if (showNc0_5) row.push(item.nc0_5 !== null ? item.nc0_5 : "");
+        if (showNc1_0) row.push(item.nc1_0 !== null ? item.nc1_0 : "");
+        if (showNc2_5) row.push(item.nc2_5 !== null ? item.nc2_5 : "");
+        if (showNc4_0) row.push(item.nc4_0 !== null ? item.nc4_0 : "");
+        if (showNc10) row.push(item.nc10 !== null ? item.nc10 : "");
+        if (showTypicalSize) row.push(item.typicalSize !== null ? item.typicalSize : "");
         data.push(row);
       });
 
