@@ -1296,11 +1296,22 @@
       const ds = [];
       const add = (label, data) => ds.push({ label, data, tension: 0.25, pointRadius: 0 });
 
+      // Mass Concentration (baseado no seletor de séries)
       if (seriesMode === "pm25") add("PM2.5 (µg/m³)", series.pm2_5);
       if (seriesMode === "pm25_pm1") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM1.0 (µg/m³)", series.pm1_0); }
       if (seriesMode === "pm25_pm4") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM4.0 (µg/m³)", series.pm4_0); }
       if (seriesMode === "pm25_pm10") { add("PM2.5 (µg/m³)", series.pm2_5); add("PM10 (µg/m³)", series.pm10); }
       if (seriesMode === "all") { add("PM1.0 (µg/m³)", series.pm1_0); add("PM2.5 (µg/m³)", series.pm2_5); add("PM4.0 (µg/m³)", series.pm4_0); add("PM10 (µg/m³)", series.pm10); }
+
+      // Number Concentration (baseado nos checkboxes)
+      if ($("showNc0_5")?.checked && series.nc0_5) add("NC0.5 (#/cm³)", series.nc0_5);
+      if ($("showNc1_0")?.checked && series.nc1_0) add("NC1.0 (#/cm³)", series.nc1_0);
+      if ($("showNc2_5")?.checked && series.nc2_5) add("NC2.5 (#/cm³)", series.nc2_5);
+      if ($("showNc4_0")?.checked && series.nc4_0) add("NC4.0 (#/cm³)", series.nc4_0);
+      if ($("showNc10")?.checked && series.nc10) add("NC10 (#/cm³)", series.nc10);
+
+      // Typical Particle Size
+      if ($("showTypicalSize")?.checked && series.typical_particle_size) add("Tamanho Típico (µm)", series.typical_particle_size);
 
       return ds;
     }
@@ -1359,6 +1370,10 @@
         typical_particle_size: []
       };
 
+      // Armazena os dados originais para reconstrução do gráfico
+      lastSeriesData = series;
+      lastLabels = labels;
+
       const datasets = buildDatasets(seriesMode, series);
 
       chart.data.labels = labels;
@@ -1412,6 +1427,8 @@
     let currentSort = { column: null, direction: null };
     let tableListenersAdded = false;
     let picosData = []; // Armazena dados originais dos picos
+    let lastSeriesData = null; // Armazena os últimos dados de séries carregados da API
+    let lastLabels = []; // Armazena os últimos labels carregados
 
     function updateDataTable(labels, series, seriesMode, labelsIso) {
       const tableBody = $("tableBody");
@@ -1745,6 +1762,16 @@
       const checkbox = $(id);
       if (checkbox) {
         checkbox.addEventListener("change", () => {
+          // Se há dados carregados, atualiza gráfico e tabela
+          if (lastSeriesData && lastLabels.length > 0) {
+            // Reconstrói o gráfico com os dados originais
+            const seriesMode = $("seriesMode").value;
+            const datasets = buildDatasets(seriesMode, lastSeriesData);
+            chart.data.labels = lastLabels;
+            chart.data.datasets = datasets;
+            chart.update();
+          }
+          
           // Re-renderiza a tabela com as novas seleções
           const seriesMode = $("seriesMode").value;
           const showPm1 = seriesMode === "pm25_pm1" || seriesMode === "all";
